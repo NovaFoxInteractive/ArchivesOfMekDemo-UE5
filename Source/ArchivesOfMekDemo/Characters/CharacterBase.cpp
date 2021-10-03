@@ -37,6 +37,9 @@ ACharacterBase::ACharacterBase()
 	BaseWalkSpeed = 600.f;
 	SprintWalkSpeed = BaseWalkSpeed * 1.5f;
 
+	MaxStamina = 100.f;
+	CurrentStamina = MaxStamina;
+
 	bCanDodge = true;
 	bCanAttack = true;
 	bCanBlock = true;
@@ -58,6 +61,13 @@ void ACharacterBase::Tick(float DeltaTime)
 	// Check if dead
 	if (CurrentHealth <= 0 && !bIsDead)
 		INT_Death();
+
+	if (GameMode->bDifficulty)
+	{
+		MaxStamina = CurrentHealth;
+		if (CurrentStamina > MaxStamina)
+			CurrentStamina = MaxStamina;
+	}
 }
 
 // Called to bind functionality to input
@@ -316,6 +326,11 @@ void ACharacterBase::INT_ComboLogic()
 		}
 		break;
 	}
+}
+
+void ACharacterBase::ChangeStamina(float Val)
+{
+	CurrentStamina -= Val;
 }
 
 bool ACharacterBase::INT_ComboNumCheck()

@@ -79,12 +79,17 @@ class ARCHIVESOFMEKDEMO_API ACharacterBase : public ACharacter
 	*/
 
 	// Health
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Health", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat|Health", meta = (AllowPrivateAccess = "true"))
 	float MaxHealth;
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Health", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Combat|Health", meta = (AllowPrivateAccess = "true"))
 	float CurrentHealth;
-	UPROPERTY(BlueprintReadOnly, Category = "Health", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, Category = "Combat|Health", meta = (AllowPrivateAccess = "true"))
 	bool bIsDead;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Movement|Stamina", meta = (AllowPrivateAccess = "true"))
+	float MaxStamina;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Movement|Stamina", meta = (AllowPrivateAccess = "true"))
+	float CurrentStamina;
 
 public:
 	// Sets default values for this character's properties
@@ -138,6 +143,9 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Combat|Blocking")
 	void StopBlock();
 	
+	UFUNCTION(BlueprintCallable, Category = "Movement|Stamina")
+	void ChangeStamina(float Val);
+
 	// Health
 	void INT_Death();
 	UFUNCTION(BlueprintImplementableEvent, Category = Health)
