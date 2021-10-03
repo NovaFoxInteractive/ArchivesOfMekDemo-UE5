@@ -1,4 +1,6 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright NovaFox Interactive L.L.C 2021
+
 
 #pragma once
 
@@ -14,4 +16,7 @@ class ARCHIVESOFMEKDEMO_API AArchivesOfMekDemoGameModeBase : public AGameModeBas
 {
 	GENERATED_BODY()
 	
+public:
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Difficulty)
+	bool bDifficulty = false; // false = normal, true = pro
 };

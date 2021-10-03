@@ -19,6 +19,9 @@ class ARCHIVESOFMEKDEMO_API ACharacterBase : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
 
+	UPROPERTY(BlueprintReadOnly, Category = GameMode, meta = (AllowPrivateAccess = "true"))
+	class AArchivesOfMekDemoGameModeBase* GameMode;
+
 	// Camera Movement
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	float BaseTurnRate;

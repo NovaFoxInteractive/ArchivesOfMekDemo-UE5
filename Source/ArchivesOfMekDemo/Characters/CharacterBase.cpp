@@ -4,6 +4,9 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Kismet/GameplayStatics.h"
+
+#include "../ArchivesOfMekDemoGameModeBase.h"
 
 // Sets default values
 ACharacterBase::ACharacterBase()
@@ -21,6 +24,8 @@ ACharacterBase::ACharacterBase()
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>("FollowCamera");
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
+
+	GameMode = Cast<AArchivesOfMekDemoGameModeBase>(UGameplayStatics::GetGameMode(GetWorld()));
 
 	// Initialize Variables
 	BaseTurnRate = 65.f;
@@ -128,6 +133,12 @@ void ACharacterBase::INT_LightAttack()
 {
 	if (!bCanAttack || bAnimLoaded) return; // Check if Can Attack
 
+	if (bIsBlocking)
+	{
+		PreviousAttack = EAttackType::EA_None;
+		AttackCount = 0;
+	}
+
 	bIsAttacking = true;
 
 	if (GetCharacterMovement()->IsFalling())
@@ -150,6 +161,12 @@ void ACharacterBase::INT_LightAttack()
 void ACharacterBase::INT_HeavyAttack()
 {
 	if (!bCanAttack || bAnimLoaded) return; // Check if Can Attack
+
+	if (bIsBlocking)
+	{
+		PreviousAttack = EAttackType::EA_None;
+		AttackCount = 0;
+	}
 
 	bIsAttacking = true;
 
