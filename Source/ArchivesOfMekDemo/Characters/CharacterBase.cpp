@@ -62,7 +62,7 @@ void ACharacterBase::Tick(float DeltaTime)
 	if (CurrentHealth <= 0 && !bIsDead)
 		INT_Death();
 
-	if (GameMode->bDifficulty)
+	if (GameMode->Difficulty == EDifficulty::ED_Pro)
 	{
 		MaxStamina = CurrentHealth;
 		if (CurrentStamina > MaxStamina)
@@ -205,25 +205,25 @@ void ACharacterBase::INT_ComboLogic()
 		switch (CurrentAttackType)
 		{
 		case EAttackType::EA_LightAttack:
-			AnimNum = 0; // Light
+			AnimNum = EAttackAnim::EAA_L; // Light
 			PreviousAttack = CurrentAttackType;
 			AttackCount++;
 			break;
 
 		case EAttackType::EA_HeavyAttack:
-			AnimNum = 4; // Heavy
+			AnimNum = EAttackAnim::EAA_H; // Heavy
 			PreviousAttack = CurrentAttackType;
 			AttackCount++;
 			break;
 
 		case EAttackType::EA_LightJumpAttack:
-			AnimNum = 8; // Light Jump
+			AnimNum = EAttackAnim::EAA_LJump; // Light Jump
 			PreviousAttack = CurrentAttackType;
 			AttackCount = 0;
 			break;
 
 		case EAttackType::EA_HeavyJumpAttack:
-			AnimNum = 9; // Heavy Jump
+			AnimNum = EAttackAnim::EAA_HJump; // Heavy Jump
 			PreviousAttack = CurrentAttackType;
 			AttackCount = 0;
 			break;
@@ -236,13 +236,13 @@ void ACharacterBase::INT_ComboLogic()
 		case EAttackType::EA_LightAttack:
 			if (INT_ComboNumCheck())
 			{
-				AnimNum = 2; // Light Light Light
+				AnimNum = EAttackAnim::EAA_LLL; // Light Light Light
 				PreviousAttack = EAttackType::EA_None;
 				AttackCount = 0;
 			}
 			else
 			{
-				AnimNum = 1; // Light Light
+				AnimNum = EAttackAnim::EAA_LL; // Light Light
 				PreviousAttack = CurrentAttackType;
 				AttackCount++;
 			}
@@ -251,13 +251,13 @@ void ACharacterBase::INT_ComboLogic()
 		case EAttackType::EA_HeavyAttack:
 			if (INT_ComboNumCheck())
 			{
-				AnimNum = 3; // Light Light Heavy
+				AnimNum = EAttackAnim::EAA_LLH; // Light Light Heavy
 				PreviousAttack = EAttackType::EA_None;
 				AttackCount = 0;
 			}
 			else
 			{
-				AnimNum = 4; // Heavy
+				AnimNum = EAttackAnim::EAA_H; // Heavy
 				PreviousAttack = CurrentAttackType;
 				AttackCount = 0;
 				AttackCount++;
@@ -265,13 +265,13 @@ void ACharacterBase::INT_ComboLogic()
 			break;
 
 		case EAttackType::EA_LightJumpAttack:
-			AnimNum = 8; // Light Jump
+			AnimNum = EAttackAnim::EAA_LJump; // Light Jump
 			PreviousAttack = CurrentAttackType;
 			AttackCount = 0;
 			break;
 
 		case EAttackType::EA_HeavyJumpAttack:
-			AnimNum = 9; // Heavy Jump
+			AnimNum = EAttackAnim::EAA_HJump; // Heavy Jump
 			PreviousAttack = CurrentAttackType;
 			AttackCount = 0;
 			break;
@@ -284,13 +284,13 @@ void ACharacterBase::INT_ComboLogic()
 		case EAttackType::EA_LightAttack:
 			if (INT_ComboNumCheck())
 			{
-				AnimNum = 7; // Heavy Heavy Light
+				AnimNum = EAttackAnim::EAA_HHL; // Heavy Heavy Light
 				PreviousAttack = EAttackType::EA_None;
 				AttackCount = 0;
 			}
 			else
 			{
-				AnimNum = 0; // Light
+				AnimNum = EAttackAnim::EAA_L; // Light
 				PreviousAttack = CurrentAttackType;
 				AttackCount = 0;
 				AttackCount++;
@@ -300,26 +300,26 @@ void ACharacterBase::INT_ComboLogic()
 		case EAttackType::EA_HeavyAttack:
 			if (INT_ComboNumCheck())
 			{
-				AnimNum = 6; // Heavy Heavy Heavy
+				AnimNum = EAttackAnim::EAA_HHH; // Heavy Heavy Heavy
 				PreviousAttack = EAttackType::EA_None;
 				AttackCount = 0;
 			}
 			else
 			{
-				AnimNum = 5; // Heavy Heavy
+				AnimNum = EAttackAnim::EAA_HH; // Heavy Heavy
 				PreviousAttack = CurrentAttackType;
 				AttackCount++;
 			}
 			break;
 
 		case EAttackType::EA_LightJumpAttack:
-			AnimNum = 8; // Light Jump
+			AnimNum = EAttackAnim::EAA_LJump; // Light Jump
 			PreviousAttack = CurrentAttackType;
 			AttackCount = 0;
 			break;
 
 		case EAttackType::EA_HeavyJumpAttack:
-			AnimNum = 9; // Heavy Jump
+			AnimNum = EAttackAnim::EAA_HJump; // Heavy Jump
 			PreviousAttack = CurrentAttackType;
 			AttackCount = 0;
 			break;
@@ -345,17 +345,17 @@ void ACharacterBase::JumpAttackCheck()
 {
 	if (bAnimLoaded)
 	{
-		if (AnimNum == 8 || AnimNum == 9)
+		if (AnimNum == EAttackAnim::EAA_LJump || AnimNum == EAttackAnim::EAA_HJump)
 		{
 			if (!(GetCharacterMovement()->IsFalling()))
 			{
-				if (AnimNum == 8)
+				if (AnimNum == EAttackAnim::EAA_LJump)
 				{
-					AnimNum = 0;
+					AnimNum = EAttackAnim::EAA_L;
 				}
 				else
 				{
-					AnimNum = 4;
+					AnimNum = EAttackAnim::EAA_H;
 				}
 			}
 		}

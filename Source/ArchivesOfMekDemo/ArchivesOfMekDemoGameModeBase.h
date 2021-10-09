@@ -6,6 +6,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
+#include "Enum/EDifficulty.h"
 #include "ArchivesOfMekDemoGameModeBase.generated.h"
 
 /**
@@ -17,6 +18,6 @@ class ARCHIVESOFMEKDEMO_API AArchivesOfMekDemoGameModeBase : public AGameModeBas
 	GENERATED_BODY()
 	
 public:
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Difficulty)
-	bool bDifficulty = false; // false = normal, true = pro
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Difficulty)
+	EDifficulty Difficulty = EDifficulty::ED_Normal;
 };

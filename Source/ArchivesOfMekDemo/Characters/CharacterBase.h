@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "../Enum/EAttackType.h"
+#include "../Enum/EAttackAnim.h"
 #include "CharacterBase.generated.h"
 
 UCLASS()
@@ -64,19 +65,7 @@ class ARCHIVESOFMEKDEMO_API ACharacterBase : public ACharacter
 	UPROPERTY(BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	bool bAnimLoaded = false;
 	UPROPERTY(BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	int AnimNum = 0;
-	/*
-		0 = Light
-		1 = Light Light
-		2 = Light Light Light
-		3 = Light Light Heavy
-		4 = Heavy
-		5 = Heavy Heavy
-		6 = Heavy Heavy Heavy
-		7 = Heavy Heavy Light
-		8 = Light Jump
-		9 = Heavy Jump
-	*/
+	EAttackAnim AnimNum;
 
 	// Health
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat|Health", meta = (AllowPrivateAccess = "true"))
