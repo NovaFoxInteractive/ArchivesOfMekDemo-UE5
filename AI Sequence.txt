@@ -1,0 +1,6 @@
+AI
+
+1- Transforms (Cutscene)
+2- Run towards NPC
+3- Attacks NPC
+4- Run towards Cave

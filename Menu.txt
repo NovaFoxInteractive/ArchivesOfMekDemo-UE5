@@ -1,0 +1,6 @@
+Menu
+
+Pause:
+
+Map - Inventory - Options:
+			Change Difficulty
