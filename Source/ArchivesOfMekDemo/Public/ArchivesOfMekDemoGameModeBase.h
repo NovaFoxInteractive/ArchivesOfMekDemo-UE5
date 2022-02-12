@@ -6,7 +6,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
-#include "Enum/EDifficulty.h"
+#include "GlobalEnum/EDifficulty.h"
 #include "ArchivesOfMekDemoGameModeBase.generated.h"
 
 /**

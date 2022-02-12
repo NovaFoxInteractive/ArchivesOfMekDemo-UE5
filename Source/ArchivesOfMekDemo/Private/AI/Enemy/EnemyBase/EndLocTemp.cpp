@@ -1,7 +1,7 @@
 // Copyright NovaFox Interactive L.L.C 2021
 
 
-#include "EndLocTemp.h"
+#include "AI/Enemy/EnemyBase/EndLocTemp.h"
 
 // Sets default values
 AEndLocTemp::AEndLocTemp()

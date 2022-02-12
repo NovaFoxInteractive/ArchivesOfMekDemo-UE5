@@ -1,12 +1,12 @@
 // Copyright NovaFox Interactive L.L.C 2021
 
 
-#include "EnemyAIControllerBase.h"
+#include "AI/Enemy/EnemyBase/EnemyAIControllerBase.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "UObject/ConstructorHelpers.h"
-#include "../../../Characters/CharacterBase.h"
+#include "Characters/CharacterBase.h"
 
 
 AEnemyAIControllerBase::AEnemyAIControllerBase(FObjectInitializer const& object_initializer)
@@ -34,9 +34,4 @@ void AEnemyAIControllerBase::OnPossess(APawn* const pawn)
 	{
 		blackboard->InitializeBlackboard(*btree->BlackboardAsset);
 	}
-}
-
-UBlackboardComponent* AEnemyAIControllerBase::get_blackboard() const
-{
-	return blackboard;
 }

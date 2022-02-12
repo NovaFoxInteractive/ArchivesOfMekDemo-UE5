@@ -1,9 +1,15 @@
 // Copyright NovaFox Interactive L.L.C 2021
 
-#include "AnimInstanceBase.h"
-#include "../CharacterBase.h"
+#include "Characters/Animations/AnimInstanceBase.h"
+#include "Characters/CharacterBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/CharacterMovementComponent.h"
+
+UAnimInstanceBase::UAnimInstanceBase() :
+	MovementSpeed(0.f), bIsInAir(false), bIsCrouching(false), bIsBlocking(false)
+{
+
+}
 
 void UAnimInstanceBase::NativeInitializeAnimation()
 {
@@ -13,7 +19,7 @@ void UAnimInstanceBase::NativeInitializeAnimation()
 	}
 }
 
-void UAnimInstanceBase::UpdateAnimationProperties()
+void UAnimInstanceBase::UpdateAnimationProperties(float DeltaTime)
 {
 	if (!Pawn)
 	{

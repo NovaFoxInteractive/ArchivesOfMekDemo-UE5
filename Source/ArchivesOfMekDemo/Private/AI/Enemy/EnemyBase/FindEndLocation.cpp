@@ -1,12 +1,12 @@
 // Copyright NovaFox Interactive L.L.C 2021
 
 
-#include "FindEndLocation.h"
+#include "AI/Enemy/EnemyBase/FindEndLocation.h"
 #include "BehaviorTree/BlackboardComponent.h"
-#include "EnemyAiControllerBase.h"
+#include "AI/Enemy/EnemyBase/EnemyAiControllerBase.h"
 //#include "BehaviorTree/Blackboard/BlackboardKeyType.h"
 #include "BehaviorTree/Blackboard/BlackboardKeyType_Vector.h"
-#include "BlackboardKeys.h"
+#include "AI/Enemy/EnemyBase/BlackboardKeys.h"
 
 UFindEndLocation::UFindEndLocation(FObjectInitializer const& object_initializer)
 {

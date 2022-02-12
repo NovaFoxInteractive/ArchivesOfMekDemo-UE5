@@ -4,8 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "../Enum/EAttackType.h"
-#include "../Enum/EAttackAnim.h"
+#include "GlobalEnum/EAttackType.h"
+#include "GlobalEnum/EAttackAnim.h"
 #include "CharacterBase.generated.h"
 
 UCLASS()
@@ -55,9 +55,9 @@ class ARCHIVESOFMEKDEMO_API ACharacterBase : public ACharacter
 	UPROPERTY(BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	int AttackCount = 0;
 	UPROPERTY(BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	EAttackType PreviousAttack = EAttackType::EA_None;
+	EAttackType PreviousAttack = EAttackType::EAT_None;
 	UPROPERTY(BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	EAttackType CurrentAttackType = EAttackType::EA_None;
+	EAttackType CurrentAttackType = EAttackType::EAT_None;
 
 	// / Animations
 	UPROPERTY(BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = "true"))
@@ -68,16 +68,16 @@ class ARCHIVESOFMEKDEMO_API ACharacterBase : public ACharacter
 	EAttackAnim AnimNum;
 
 	// Health
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat|Health", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Attributes|Health", meta = (AllowPrivateAccess = "true"))
 	float MaxHealth;
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Combat|Health", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Attributes|Health", meta = (AllowPrivateAccess = "true"))
 	float CurrentHealth;
-	UPROPERTY(BlueprintReadOnly, Category = "Combat|Health", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, Category = "Attributes|Health", meta = (AllowPrivateAccess = "true"))
 	bool bIsDead;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Movement|Stamina", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Attributes|Stamina", meta = (AllowPrivateAccess = "true"))
 	float MaxStamina;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Movement|Stamina", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Attributes|Stamina", meta = (AllowPrivateAccess = "true"))
 	float CurrentStamina;
 
 public:
@@ -88,13 +88,6 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
 	// Movement
 	void MoveForward(float Value);
 	void MoveRight(float Value);
@@ -104,6 +97,29 @@ public:
 	void TurnAtRate(float Rate);
 	void LookUpAtRate(float Rate);
 
+	// Combat
+	void INT_LightAttack();
+	void INT_HeavyAttack();
+
+	// / Combo System
+	void INT_ComboLogic();
+	bool INT_ComboNumCheck();
+
+	// / Combat Blocking System
+	void INT_Block();
+	void INT_StopBlock();
+
+	// Health
+	void INT_Death();
+
+	// Advanced Movement
+	void INT_Dodge();
+public:	
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
+
+	// Called to bind functionality to input
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	// Getter Functions
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
@@ -113,20 +129,12 @@ public:
 	FORCEINLINE bool GetIsBlocking() const { return bIsBlocking; }
 
 	// Combat
-	void INT_LightAttack();
-	void INT_HeavyAttack();
-
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = Combat)
 	void Attack();
 	// / Combo System
-	void INT_ComboLogic();
-	bool INT_ComboNumCheck();
 	UFUNCTION(BlueprintCallable, Category = "Combat|Blocking")
 	void JumpAttackCheck();
-	
 	// / Combat Blocking System
-	void INT_Block();
-	void INT_StopBlock();
 	UFUNCTION(BlueprintImplementableEvent, Category = "Combat|Blocking")
 	void Block();
 	UFUNCTION(BlueprintImplementableEvent, Category = "Combat|Blocking")
@@ -134,14 +142,10 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = "Movement|Stamina")
 	void ChangeStamina(float Val);
-
 	// Health
-	void INT_Death();
 	UFUNCTION(BlueprintImplementableEvent, Category = Health)
 	void Death();
-
 	// Advanced Movement
-	void INT_Dodge();
 	UFUNCTION(BlueprintImplementableEvent, Category = Movement)
 	void Dodge();
 };

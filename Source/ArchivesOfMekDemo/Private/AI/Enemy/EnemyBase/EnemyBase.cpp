@@ -1,7 +1,7 @@
 // Copyright NovaFox Interactive L.L.C 2021
 
 
-#include "EnemyBase.h"
+#include "AI/Enemy/EnemyBase/EnemyBase.h"
 
 // Sets default values
 AEnemyBase::AEnemyBase()

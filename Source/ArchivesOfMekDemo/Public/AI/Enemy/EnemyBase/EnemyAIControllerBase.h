@@ -17,7 +17,6 @@ public:
 	AEnemyAIControllerBase(FObjectInitializer const& object_initializer = FObjectInitializer::Get());
 	void BeginPlay() override;
 	void OnPossess(APawn* const pawn) override;
-	class UBlackboardComponent* get_blackboard() const;
 private:
 	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "AI/Enemy", meta = (AllowPrivateAccess = "true"))
 	class UBehaviorTreeComponent* behavior_tree_component;
@@ -26,4 +25,6 @@ private:
 	class UBehaviorTree* btree;
 
 	class UBlackboardComponent* blackboard;
+public:
+	FORCEINLINE class UBlackboardComponent* get_blackboard() const { return blackboard; }
 };

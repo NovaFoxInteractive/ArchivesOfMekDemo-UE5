@@ -1,12 +1,12 @@
 // Copyright NovaFox Interactive L.L.C 2021
 
-#include "CharacterBase.h"
+#include "Characters/CharacterBase.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/GameplayStatics.h"
 
-#include "../ArchivesOfMekDemoGameModeBase.h"
+#include "ArchivesOfMekDemoGameModeBase.h"
 
 // Sets default values
 ACharacterBase::ACharacterBase()
@@ -145,7 +145,7 @@ void ACharacterBase::INT_LightAttack()
 
 	if (bIsBlocking)
 	{
-		PreviousAttack = EAttackType::EA_None;
+		PreviousAttack = EAttackType::EAT_None;
 		AttackCount = 0;
 	}
 
@@ -153,11 +153,11 @@ void ACharacterBase::INT_LightAttack()
 
 	if (GetCharacterMovement()->IsFalling())
 	{
-		CurrentAttackType = EAttackType::EA_LightJumpAttack;
+		CurrentAttackType = EAttackType::EAT_LightJumpAttack;
 	}
 	else
 	{
-		CurrentAttackType = EAttackType::EA_LightAttack;
+		CurrentAttackType = EAttackType::EAT_LightAttack;
 	}
 
 	INT_ComboLogic();
@@ -174,7 +174,7 @@ void ACharacterBase::INT_HeavyAttack()
 
 	if (bIsBlocking)
 	{
-		PreviousAttack = EAttackType::EA_None;
+		PreviousAttack = EAttackType::EAT_None;
 		AttackCount = 0;
 	}
 
@@ -182,11 +182,11 @@ void ACharacterBase::INT_HeavyAttack()
 
 	if (GetCharacterMovement()->IsFalling())
 	{
-		CurrentAttackType = EAttackType::EA_HeavyJumpAttack;
+		CurrentAttackType = EAttackType::EAT_HeavyJumpAttack;
 	}
 	else
 	{
-		CurrentAttackType = EAttackType::EA_HeavyAttack;
+		CurrentAttackType = EAttackType::EAT_HeavyAttack;
 	}
 
 	INT_ComboLogic();
@@ -204,25 +204,25 @@ void ACharacterBase::INT_ComboLogic()
 	default:
 		switch (CurrentAttackType)
 		{
-		case EAttackType::EA_LightAttack:
+		case EAttackType::EAT_LightAttack:
 			AnimNum = EAttackAnim::EAA_L; // Light
 			PreviousAttack = CurrentAttackType;
 			AttackCount++;
 			break;
 
-		case EAttackType::EA_HeavyAttack:
+		case EAttackType::EAT_HeavyAttack:
 			AnimNum = EAttackAnim::EAA_H; // Heavy
 			PreviousAttack = CurrentAttackType;
 			AttackCount++;
 			break;
 
-		case EAttackType::EA_LightJumpAttack:
+		case EAttackType::EAT_LightJumpAttack:
 			AnimNum = EAttackAnim::EAA_LJump; // Light Jump
 			PreviousAttack = CurrentAttackType;
 			AttackCount = 0;
 			break;
 
-		case EAttackType::EA_HeavyJumpAttack:
+		case EAttackType::EAT_HeavyJumpAttack:
 			AnimNum = EAttackAnim::EAA_HJump; // Heavy Jump
 			PreviousAttack = CurrentAttackType;
 			AttackCount = 0;
@@ -230,14 +230,14 @@ void ACharacterBase::INT_ComboLogic()
 		}
 		break;
 
-	case EAttackType::EA_LightAttack:
+	case EAttackType::EAT_LightAttack:
 		switch (CurrentAttackType)
 		{
-		case EAttackType::EA_LightAttack:
+		case EAttackType::EAT_LightAttack:
 			if (INT_ComboNumCheck())
 			{
 				AnimNum = EAttackAnim::EAA_LLL; // Light Light Light
-				PreviousAttack = EAttackType::EA_None;
+				PreviousAttack = EAttackType::EAT_None;
 				AttackCount = 0;
 			}
 			else
@@ -248,11 +248,11 @@ void ACharacterBase::INT_ComboLogic()
 			}
 			break;
 
-		case EAttackType::EA_HeavyAttack:
+		case EAttackType::EAT_HeavyAttack:
 			if (INT_ComboNumCheck())
 			{
 				AnimNum = EAttackAnim::EAA_LLH; // Light Light Heavy
-				PreviousAttack = EAttackType::EA_None;
+				PreviousAttack = EAttackType::EAT_None;
 				AttackCount = 0;
 			}
 			else
@@ -264,13 +264,13 @@ void ACharacterBase::INT_ComboLogic()
 			}
 			break;
 
-		case EAttackType::EA_LightJumpAttack:
+		case EAttackType::EAT_LightJumpAttack:
 			AnimNum = EAttackAnim::EAA_LJump; // Light Jump
 			PreviousAttack = CurrentAttackType;
 			AttackCount = 0;
 			break;
 
-		case EAttackType::EA_HeavyJumpAttack:
+		case EAttackType::EAT_HeavyJumpAttack:
 			AnimNum = EAttackAnim::EAA_HJump; // Heavy Jump
 			PreviousAttack = CurrentAttackType;
 			AttackCount = 0;
@@ -278,14 +278,14 @@ void ACharacterBase::INT_ComboLogic()
 		}
 		break;
 
-	case EAttackType::EA_HeavyAttack:
+	case EAttackType::EAT_HeavyAttack:
 		switch (CurrentAttackType)
 		{
-		case EAttackType::EA_LightAttack:
+		case EAttackType::EAT_LightAttack:
 			if (INT_ComboNumCheck())
 			{
 				AnimNum = EAttackAnim::EAA_HHL; // Heavy Heavy Light
-				PreviousAttack = EAttackType::EA_None;
+				PreviousAttack = EAttackType::EAT_None;
 				AttackCount = 0;
 			}
 			else
@@ -297,11 +297,11 @@ void ACharacterBase::INT_ComboLogic()
 			}
 			break;
 
-		case EAttackType::EA_HeavyAttack:
+		case EAttackType::EAT_HeavyAttack:
 			if (INT_ComboNumCheck())
 			{
 				AnimNum = EAttackAnim::EAA_HHH; // Heavy Heavy Heavy
-				PreviousAttack = EAttackType::EA_None;
+				PreviousAttack = EAttackType::EAT_None;
 				AttackCount = 0;
 			}
 			else
@@ -312,13 +312,13 @@ void ACharacterBase::INT_ComboLogic()
 			}
 			break;
 
-		case EAttackType::EA_LightJumpAttack:
+		case EAttackType::EAT_LightJumpAttack:
 			AnimNum = EAttackAnim::EAA_LJump; // Light Jump
 			PreviousAttack = CurrentAttackType;
 			AttackCount = 0;
 			break;
 
-		case EAttackType::EA_HeavyJumpAttack:
+		case EAttackType::EAT_HeavyJumpAttack:
 			AnimNum = EAttackAnim::EAA_HJump; // Heavy Jump
 			PreviousAttack = CurrentAttackType;
 			AttackCount = 0;
