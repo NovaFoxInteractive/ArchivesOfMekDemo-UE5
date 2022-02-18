@@ -9,29 +9,29 @@
 #include "Characters/CharacterBase.h"
 
 
-AEnemyAIControllerBase::AEnemyAIControllerBase(FObjectInitializer const& object_initializer)
+AEnemyAIControllerBase::AEnemyAIControllerBase(FObjectInitializer const& Object_Initializer)
 {
-	static ConstructorHelpers::FObjectFinder<UBehaviorTree> obj(TEXT("BehaviorTree'/Game/_Game/AI/Enemies/BaseBlueprints/EnemyBse_BT.EnemyBse_BT'"));
-	if (obj.Succeeded())
+	static ConstructorHelpers::FObjectFinder<UBehaviorTree>Obj(TEXT("BehaviorTree'/Game/_Game/AI/Enemies/BaseBlueprints/EnemyBse_BT.EnemyBse_BT'"));
+	if (Obj.Succeeded())
 	{
-		btree = obj.Object;
+		BTree = Obj.Object;
 	}
-	behavior_tree_component = object_initializer.CreateDefaultSubobject<UBehaviorTreeComponent>(this, TEXT("BehaviorComp"));
-	blackboard = object_initializer.CreateDefaultSubobject<UBlackboardComponent>(this, TEXT("BlackboardComp"));
+	Behavior_Tree_Component = Object_Initializer.CreateDefaultSubobject<UBehaviorTreeComponent>(this, TEXT("BehaviorComp"));
+	BBoard = Object_Initializer.CreateDefaultSubobject<UBlackboardComponent>(this, TEXT("BlackboardComp"));
 }
 
 void AEnemyAIControllerBase::BeginPlay()
 {
 	Super::BeginPlay();
-	RunBehaviorTree(btree);
-	behavior_tree_component->StartTree(*btree);
+	RunBehaviorTree(BTree);
+	Behavior_Tree_Component->StartTree(*BTree);
 }
 
-void AEnemyAIControllerBase::OnPossess(APawn* const pawn)
+void AEnemyAIControllerBase::OnPossess(APawn* const PawnToPossess)
 {
-	Super::OnPossess(pawn);
-	if (blackboard)
+	Super::OnPossess(PawnToPossess);
+	if (BBoard)
 	{
-		blackboard->InitializeBlackboard(*btree->BlackboardAsset);
+		BBoard->InitializeBlackboard(*BTree->BlackboardAsset);
 	}
 }

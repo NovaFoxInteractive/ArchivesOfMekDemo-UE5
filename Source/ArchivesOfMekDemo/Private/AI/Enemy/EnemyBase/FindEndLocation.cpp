@@ -8,20 +8,20 @@
 #include "BehaviorTree/Blackboard/BlackboardKeyType_Vector.h"
 #include "AI/Enemy/EnemyBase/BlackboardKeys.h"
 
-UFindEndLocation::UFindEndLocation(FObjectInitializer const& object_initializer)
+UFindEndLocation::UFindEndLocation(FObjectInitializer const& Object_Initializer)
 {
 	NodeName = TEXT("Find End Location");
 }
 
-EBTNodeResult::Type UFindEndLocation::ExecuteTask(UBehaviorTreeComponent& owner_comp, uint8* node_memory)
+EBTNodeResult::Type UFindEndLocation::ExecuteTask(UBehaviorTreeComponent& Owner_Comp, uint8* Node_Memory)
 {
 	// get AI controller and its NPC
-	auto const cont = Cast<AEnemyAIControllerBase>(owner_comp.GetAIOwner());
+	auto const Cont = Cast<AEnemyAIControllerBase>(Owner_Comp.GetAIOwner());
 
 	// get empty actor location
-	cont->get_blackboard()->SetValueAsVector(bb_keys::target_location, endLoc);
+	Cont->Get_Blackboard()->SetValueAsVector(BB_Keys::target_location, EndLoc);
 
 	// finish with success
-	FinishLatentTask(owner_comp, EBTNodeResult::Succeeded);
+	FinishLatentTask(Owner_Comp, EBTNodeResult::Succeeded);
 	return EBTNodeResult::Succeeded;
 }

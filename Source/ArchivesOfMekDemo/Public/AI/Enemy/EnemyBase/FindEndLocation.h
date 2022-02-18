@@ -17,9 +17,9 @@ class ARCHIVESOFMEKDEMO_API UFindEndLocation : public UBTTask_BlackboardBase
 {
 	GENERATED_BODY()
 public:
-	UFindEndLocation(FObjectInitializer const& object_initializer);
-	EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& owner_comp, uint8* node_memory);
+	UFindEndLocation(FObjectInitializer const& Object_Initializer);
+	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& Owner_Comp, uint8* Node_Memory) override;
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Search", meta = (AllowPrivateAccess = "true"))
-	FVector endLoc;
+	FVector EndLoc;
 };

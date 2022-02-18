@@ -77,7 +77,7 @@ class ARCHIVESOFMEKDEMO_API ACharacterBase : public ACharacter
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Attributes|Stamina", meta = (AllowPrivateAccess = "true"))
 	float MaxStamina;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Attributes|Stamina", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Attributes|Stamina", meta = (AllowPrivateAccess = "true"))
 	float CurrentStamina;
 
 public:
@@ -103,7 +103,7 @@ protected:
 
 	// / Combo System
 	void INT_ComboLogic();
-	bool INT_ComboNumCheck();
+	bool INT_ComboNumCheck() const;
 
 	// / Combat Blocking System
 	void INT_Block();
@@ -114,6 +114,8 @@ protected:
 
 	// Advanced Movement
 	void INT_Dodge();
+
+	void UpdateStamina();
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

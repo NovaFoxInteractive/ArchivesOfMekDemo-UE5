@@ -25,7 +25,7 @@ ACharacterBase::ACharacterBase()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
 
-	GameMode = Cast<AArchivesOfMekDemoGameModeBase>(UGameplayStatics::GetGameMode(GetWorld()));
+	GameMode = Cast<AArchivesOfMekDemoGameModeBase>(UGameplayStatics::GetGameMode(AActor::GetWorld()));
 
 	// Initialize Variables
 	BaseTurnRate = 65.f;
@@ -62,12 +62,11 @@ void ACharacterBase::Tick(float DeltaTime)
 	if (CurrentHealth <= 0 && !bIsDead)
 		INT_Death();
 
-	if (GameMode->Difficulty == EDifficulty::ED_Pro)
-	{
-		MaxStamina = CurrentHealth;
-		if (CurrentStamina > MaxStamina)
-			CurrentStamina = MaxStamina;
-	}
+	if (GameMode)
+		if (GameMode->GetDifficulty() == EDifficulty::ED_Pro)
+		{
+			UpdateStamina();
+		}
 }
 
 // Called to bind functionality to input
@@ -227,6 +226,8 @@ void ACharacterBase::INT_ComboLogic()
 			PreviousAttack = CurrentAttackType;
 			AttackCount = 0;
 			break;
+		default:
+			break;
 		}
 		break;
 
@@ -274,6 +275,8 @@ void ACharacterBase::INT_ComboLogic()
 			AnimNum = EAttackAnim::EAA_HJump; // Heavy Jump
 			PreviousAttack = CurrentAttackType;
 			AttackCount = 0;
+			break;
+		default:
 			break;
 		}
 		break;
@@ -323,6 +326,8 @@ void ACharacterBase::INT_ComboLogic()
 			PreviousAttack = CurrentAttackType;
 			AttackCount = 0;
 			break;
+		default:
+			break;
 		}
 		break;
 	}
@@ -333,7 +338,7 @@ void ACharacterBase::ChangeStamina(float Val)
 	CurrentStamina -= Val;
 }
 
-bool ACharacterBase::INT_ComboNumCheck()
+bool ACharacterBase::INT_ComboNumCheck() const
 {
 	if (AttackCount > 1)
 		return true;
@@ -378,6 +383,13 @@ void ACharacterBase::INT_Dodge()
 		bIsDodging = true;
 		Dodge();
 	}
+}
+
+void ACharacterBase::UpdateStamina()
+{
+	MaxStamina = CurrentHealth;
+	if (CurrentStamina > MaxStamina)
+		CurrentStamina = MaxStamina;
 }
 
 void ACharacterBase::INT_Block()

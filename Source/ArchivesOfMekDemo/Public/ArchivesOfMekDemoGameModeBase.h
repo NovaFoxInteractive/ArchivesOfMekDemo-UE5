@@ -17,7 +17,12 @@ class ARCHIVESOFMEKDEMO_API AArchivesOfMekDemoGameModeBase : public AGameModeBas
 {
 	GENERATED_BODY()
 	
-public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Difficulty)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Difficulty, meta=(AllowPrivateAccess = "true"))
 	EDifficulty Difficulty = EDifficulty::ED_Normal;
+
+public:
+	FORCEINLINE EDifficulty GetDifficulty() const { return Difficulty; }
+
+	UFUNCTION(BlueprintCallable)
+	void SetDifficulty(const EDifficulty NewDifficulty);
 };
