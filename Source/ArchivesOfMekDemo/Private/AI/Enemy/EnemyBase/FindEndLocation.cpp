@@ -7,6 +7,7 @@
 //#include "BehaviorTree/Blackboard/BlackboardKeyType.h"
 #include "BehaviorTree/Blackboard/BlackboardKeyType_Vector.h"
 #include "AI/Enemy/EnemyBase/BlackboardKeys.h"
+#include "AI/Enemy/EnemyBase/EndLocTemp.h"
 
 UFindEndLocation::UFindEndLocation(FObjectInitializer const& Object_Initializer)
 {

@@ -6,7 +6,8 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/GameplayStatics.h"
 
-#include "ArchivesOfMekDemoGameModeBase.h"
+#include "Core/ArchivesOfMekDemoGameModeBase.h"
+#include "Core/Components/InventoryComponent.h"
 
 // Sets default values
 ACharacterBase::ACharacterBase()
@@ -44,6 +45,9 @@ ACharacterBase::ACharacterBase()
 	bCanAttack = true;
 	bCanBlock = true;
 
+	PlayerInventory = CreateDefaultSubobject<UInventoryComponent>("PlayerInventory");
+	PlayerInventory->SetCapacity(30);
+	PlayerInventory->SetWeightCapacity(75.f);
 }
 
 // Called when the game starts or when spawned
