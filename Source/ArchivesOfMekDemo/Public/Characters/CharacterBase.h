@@ -87,6 +87,9 @@ public:
 	// Sets default values for this character's properties
 	ACharacterBase();
 
+	UFUNCTION(BlueprintCallable, Category = "Items")
+	void UseItem(class UItem* Item);
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

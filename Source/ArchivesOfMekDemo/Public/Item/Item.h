@@ -99,7 +99,7 @@ public:
 
 	void SetOwningInventory(class UInventoryComponent* InventoryComponent);
 	
-	virtual void Use(class ASurvivalCharacter* Character);
+	virtual void Use(class ACharacterBase* Character);
 	virtual void AddedToInventory(class UInventoryComponent* Inventory);
 
 };

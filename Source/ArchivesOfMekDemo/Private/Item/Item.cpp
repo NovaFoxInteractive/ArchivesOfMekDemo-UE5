@@ -47,7 +47,7 @@ void UItem::SetOwningInventory(UInventoryComponent* InventoryComponent)
 	OwningInventory = InventoryComponent;
 }
 
-void UItem::Use(ASurvivalCharacter* Character)
+void UItem::Use(ACharacterBase* Character)
 {
 }
 

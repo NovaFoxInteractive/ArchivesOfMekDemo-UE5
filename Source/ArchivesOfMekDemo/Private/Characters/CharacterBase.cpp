@@ -50,6 +50,12 @@ ACharacterBase::ACharacterBase()
 	PlayerInventory->SetWeightCapacity(75.f);
 }
 
+void ACharacterBase::UseItem(UItem* Item)
+{
+	if(!PlayerInventory || !Item || !PlayerInventory->FindItem(Item)) return;
+	Item->Use(this);
+}
+
 // Called when the game starts or when spawned
 void ACharacterBase::BeginPlay()
 {
