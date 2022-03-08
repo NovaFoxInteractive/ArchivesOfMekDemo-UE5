@@ -6,6 +6,8 @@
 #include "UObject/NoExportTypes.h"
 #include "Item.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnItemModified);
+
 UENUM(BlueprintType)
 enum class EItemRarity : uint8
 {
@@ -30,6 +32,8 @@ protected:
 public:
 	UItem();
 
+	UPROPERTY(BlueprintAssignable)
+	FOnItemModified OnItemModified;
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Item", meta=(AllowProtectedAccess="true"))
 	class UStaticMesh* PickupMesh;

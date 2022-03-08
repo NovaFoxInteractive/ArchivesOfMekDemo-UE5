@@ -8,6 +8,27 @@
 #include "GlobalEnum/EAttackAnim.h"
 #include "CharacterBase.generated.h"
 
+USTRUCT()
+struct FInteractionData
+{
+	GENERATED_BODY()
+	
+	FInteractionData() :
+		ViewedInteractionComponent(nullptr), LastInteractionCheckTime(0.f), bInteractHeld(false)
+	{
+
+	}
+	
+	UPROPERTY()
+	class UInteractionComponent* ViewedInteractionComponent;	
+
+	UPROPERTY()
+	float LastInteractionCheckTime;
+
+	UPROPERTY()
+	bool bInteractHeld;
+};
+
 UCLASS()
 class ARCHIVESOFMEKDEMO_API ACharacterBase : public ACharacter
 {
@@ -19,9 +40,6 @@ class ARCHIVESOFMEKDEMO_API ACharacterBase : public ACharacter
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
-	class UInventoryComponent* PlayerInventory;
 	
 	UPROPERTY(BlueprintReadOnly, Category = GameMode, meta = (AllowPrivateAccess = "true"))
 	class AArchivesOfMekDemoGameModeBase* GameMode;
@@ -83,12 +101,26 @@ class ARCHIVESOFMEKDEMO_API ACharacterBase : public ACharacter
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Attributes|Stamina", meta = (AllowPrivateAccess = "true"))
 	float CurrentStamina;
 
+	// Interaction System
+	UPROPERTY(EditDefaultsOnly, Category = "Interaction", meta = (AllowPrivateAccess = "true"))
+	float InteractionCheckFrequency;
+	UPROPERTY(EditDefaultsOnly, Category = "Interaction", meta = (AllowPrivateAccess = "true"))
+	float InteractionCheckDistance;
+	UPROPERTY()
+	FInteractionData InteractionData;
+	FTimerHandle TimerHandle_Interact;
 public:
 	// Sets default values for this character's properties
 	ACharacterBase();
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Components")
+	class UInventoryComponent* PlayerInventory;
+
 	UFUNCTION(BlueprintCallable, Category = "Items")
 	void UseItem(class UItem* Item);
+
+	bool IsInteracting() const;
+	float GetRemainingInteractTime() const;
 
 protected:
 	// Called when the game starts or when spawned
@@ -122,6 +154,16 @@ protected:
 	void INT_Dodge();
 
 	void UpdateStamina();
+
+	// Interaction System
+	void PerformInteractionCheck();
+
+	void CouldntFindInteractable();
+	void FoundNewInteractable(UInteractionComponent* Interactable);
+	void Interact();
+
+	void BeginInteract();
+	void EndInteract();
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -135,6 +177,8 @@ public:
 	FORCEINLINE bool GetIsDodging() const { return bIsDodging; }
 	FORCEINLINE bool GetIsAttacking() const { return bIsAttacking; }
 	FORCEINLINE bool GetIsBlocking() const { return bIsBlocking; }
+
+	FORCEINLINE UInteractionComponent* GetInteractable() const { return InteractionData.ViewedInteractionComponent; }
 
 	// Combat
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = Combat)

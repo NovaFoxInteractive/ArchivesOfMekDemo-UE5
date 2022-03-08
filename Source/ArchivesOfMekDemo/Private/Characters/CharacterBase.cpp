@@ -1,6 +1,8 @@
 // Copyright NovaFox Interactive L.L.C 2021
 
 #include "Characters/CharacterBase.h"
+
+#include "Log.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -9,8 +11,11 @@
 #include "Core/ArchivesOfMekDemoGameModeBase.h"
 #include "Core/Components/InventoryComponent.h"
 
+#include "Core/Components/InteractionComponent.h"
+
 // Sets default values
-ACharacterBase::ACharacterBase()
+ACharacterBase::ACharacterBase() :
+	InteractionCheckFrequency(0.f), InteractionCheckDistance(1000.f)
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -56,6 +61,16 @@ void ACharacterBase::UseItem(UItem* Item)
 	Item->Use(this);
 }
 
+bool ACharacterBase::IsInteracting() const
+{
+	return GetWorldTimerManager().IsTimerActive(TimerHandle_Interact);
+}
+
+float ACharacterBase::GetRemainingInteractTime() const
+{
+	return GetWorldTimerManager().GetTimerRemaining(TimerHandle_Interact);
+}
+
 // Called when the game starts or when spawned
 void ACharacterBase::BeginPlay()
 {
@@ -76,6 +91,11 @@ void ACharacterBase::Tick(float DeltaTime)
 		if (GameMode->GetDifficulty() == EDifficulty::ED_Pro)
 		{
 			UpdateStamina();
+		}
+
+	if (IsInteracting() || GetWorld()->TimeSince(InteractionData.LastInteractionCheckTime) > InteractionCheckFrequency)
+		{
+			PerformInteractionCheck();
 		}
 }
 
@@ -102,13 +122,16 @@ void ACharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAction("Dodge", IE_Pressed, this, &ACharacterBase::INT_Dodge);
 	PlayerInputComponent->BindAction("Block", IE_Pressed, this, &ACharacterBase::INT_Block);
 	PlayerInputComponent->BindAction("Block", IE_Released, this, &ACharacterBase::INT_StopBlock);
+
+	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ACharacterBase::BeginInteract);
+	PlayerInputComponent->BindAction("Interact", IE_Released, this, &ACharacterBase::EndInteract);
 }
 
 void ACharacterBase::MoveForward(float Value)
 {
-	if ((Controller != nullptr) && (Value != 0.f))
+	if ((GetController() != nullptr) && (Value != 0.f))
 	{
-		const FRotator Rotation = Controller->GetControlRotation();
+		const FRotator Rotation = GetController()->GetControlRotation();
 		const FRotator YawRotation(0.f, Rotation.Yaw, 0.f);
 
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
@@ -118,9 +141,9 @@ void ACharacterBase::MoveForward(float Value)
 
 void ACharacterBase::MoveRight(float Value)
 {
-	if ((Controller != nullptr) && (Value != 0.f))
+	if ((GetController() != nullptr) && (Value != 0.f))
 	{
-		const FRotator Rotation = Controller->GetControlRotation();
+		const FRotator Rotation = GetController()->GetControlRotation();
 		const FRotator YawRotation(0.f, Rotation.Yaw, 0.f);
 
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
@@ -400,6 +423,116 @@ void ACharacterBase::UpdateStamina()
 	MaxStamina = CurrentHealth;
 	if (CurrentStamina > MaxStamina)
 		CurrentStamina = MaxStamina;
+}
+
+void ACharacterBase::PerformInteractionCheck()
+{
+	if (GetController() == nullptr) return;
+
+	InteractionData.LastInteractionCheckTime = GetWorld()->GetTimeSeconds();
+
+	FVector EyesLoc = GetCameraBoom()->GetComponentLocation();
+	FRotator EyesRot = GetCameraBoom()->GetComponentRotation();
+
+	const FVector TraceStart{ EyesLoc };
+	const FVector TraceEnd{ (EyesRot.Vector() * InteractionCheckDistance) + TraceStart };
+	FHitResult TraceHit;
+
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this);
+
+	if (GetWorld()->LineTraceSingleByChannel(TraceHit, TraceStart, TraceEnd, ECC_Visibility, QueryParams))
+	{
+		if (TraceHit.GetActor())
+		{
+			if (UInteractionComponent* InteractionComponent = Cast<UInteractionComponent>(TraceHit.GetActor()->GetComponentByClass(UInteractionComponent::StaticClass())))
+			{
+				float Distance = (TraceStart - TraceHit.ImpactPoint).Size();
+				if (InteractionComponent != GetInteractable() && Distance <= InteractionComponent->GetInteractionDistance())
+					FoundNewInteractable(InteractionComponent);
+				else if (Distance > InteractionComponent->GetInteractionDistance() && GetInteractable())
+					CouldntFindInteractable();
+
+				return;
+			}
+		}
+	}
+
+	CouldntFindInteractable();
+}
+
+void ACharacterBase::CouldntFindInteractable()
+{
+	if (GetWorldTimerManager().IsTimerActive(TimerHandle_Interact))
+	{
+		GetWorldTimerManager().ClearTimer(TimerHandle_Interact);
+	}
+
+	if (UInteractionComponent* Interactable = GetInteractable())
+	{
+		Interactable->EndFocus(this);
+
+		if (InteractionData.bInteractHeld)
+		{
+			EndInteract();
+		}
+	}
+
+	InteractionData.ViewedInteractionComponent = nullptr;
+}
+
+void ACharacterBase::FoundNewInteractable(UInteractionComponent* Interactable)
+{
+	if(!Interactable) return;
+	
+	EndInteract();
+
+	if(UInteractionComponent* OldInteractable = GetInteractable())
+	{
+		OldInteractable->EndFocus(this);
+	}
+
+	InteractionData.ViewedInteractionComponent = Interactable;
+	Interactable->BeginFocus(this);
+}
+
+void ACharacterBase::Interact()
+{
+	GetWorldTimerManager().ClearTimer(TimerHandle_Interact);
+
+	if (UInteractionComponent* Interactable = GetInteractable())
+	{
+		Interactable->Interact(this);
+	}
+}
+
+void ACharacterBase::BeginInteract()
+{
+	PerformInteractionCheck();
+	
+	InteractionData.bInteractHeld = true;
+
+	if (UInteractionComponent* Interactable = GetInteractable())
+	{
+		Interactable->BeginInteract(this);
+
+		if (FMath::IsNearlyZero(Interactable->GetInteractionTime()))
+			Interact();
+		else
+			GetWorldTimerManager().SetTimer(TimerHandle_Interact, this, &ACharacterBase::Interact, Interactable->GetInteractionTime(), false);
+	}
+}
+
+void ACharacterBase::EndInteract()
+{
+	InteractionData.bInteractHeld = false;
+
+	GetWorldTimerManager().ClearTimer(TimerHandle_Interact);
+
+	if (UInteractionComponent* Interactable = GetInteractable())
+	{
+		Interactable->EndInteract(this);
+	}
 }
 
 void ACharacterBase::INT_Block()
