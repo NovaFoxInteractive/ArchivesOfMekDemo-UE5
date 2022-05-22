@@ -109,6 +109,13 @@ class ARCHIVESOFMEKDEMO_API ACharacterBase : public ACharacter
 	UPROPERTY()
 	FInteractionData InteractionData;
 	FTimerHandle TimerHandle_Interact;
+
+	// Damage Aesthetics
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat|Damage|Aesthetics", meta = (AllowPrivateAccess = "true"))
+	class USoundCue* MeleeImpactSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat|Damage|Aesthetics", meta = (AllowPrivateAccess = "true"))
+	UParticleSystem* BloodParticles;
 public:
 	// Sets default values for this character's properties
 	ACharacterBase();
@@ -121,6 +128,9 @@ public:
 
 	bool IsInteracting() const;
 	float GetRemainingInteractTime() const;
+
+	// Take Combat Damage
+	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
 protected:
 	// Called when the game starts or when spawned
@@ -179,6 +189,9 @@ public:
 	FORCEINLINE bool GetIsBlocking() const { return bIsBlocking; }
 
 	FORCEINLINE UInteractionComponent* GetInteractable() const { return InteractionData.ViewedInteractionComponent; }
+
+	FORCEINLINE USoundCue* GetMeleeImpactSound() const { return MeleeImpactSound; }
+	FORCEINLINE UParticleSystem* GetBloodParticles() const { return BloodParticles; }
 
 	// Combat
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = Combat)

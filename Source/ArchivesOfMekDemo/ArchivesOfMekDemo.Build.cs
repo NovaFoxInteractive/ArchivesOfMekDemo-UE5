@@ -14,7 +14,6 @@ public class ArchivesOfMekDemo : ModuleRules
 			"Engine", 
 			"InputCore",
 			"AIModule",
-			"GameplayTasks",
 			"NavigationSystem"
 		});
 

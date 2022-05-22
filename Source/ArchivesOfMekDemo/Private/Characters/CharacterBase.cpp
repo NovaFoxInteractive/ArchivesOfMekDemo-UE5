@@ -71,6 +71,17 @@ float ACharacterBase::GetRemainingInteractTime() const
 	return GetWorldTimerManager().GetTimerRemaining(TimerHandle_Interact);
 }
 
+float ACharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
+	AActor* DamageCauser)
+{
+	if(CurrentHealth - DamageAmount <= 0.f)
+		CurrentHealth = 0.f;
+	else
+		CurrentHealth -= DamageAmount;
+	
+	return DamageAmount;
+}
+
 // Called when the game starts or when spawned
 void ACharacterBase::BeginPlay()
 {
