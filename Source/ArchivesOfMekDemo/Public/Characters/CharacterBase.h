@@ -40,6 +40,12 @@ class ARCHIVESOFMEKDEMO_API ACharacterBase : public ACharacter
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attributes|Health", meta = (AllowPrivateAccess = "true"))
+	class UHealthComponent* HealthComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attributes|Health", meta = (AllowPrivateAccess = "true"))
+	class UCustomMovementComponent* CustomMovementComponent;
 	
 	UPROPERTY(BlueprintReadOnly, Category = GameMode, meta = (AllowPrivateAccess = "true"))
 	class AArchivesOfMekDemoGameModeBase* GameMode;
@@ -87,19 +93,6 @@ class ARCHIVESOFMEKDEMO_API ACharacterBase : public ACharacter
 	bool bAnimLoaded = false;
 	UPROPERTY(BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	EAttackAnim AnimNum;
-
-	// Health
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Attributes|Health", meta = (AllowPrivateAccess = "true"))
-	float MaxHealth;
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Attributes|Health", meta = (AllowPrivateAccess = "true"))
-	float CurrentHealth;
-	UPROPERTY(BlueprintReadOnly, Category = "Attributes|Health", meta = (AllowPrivateAccess = "true"))
-	bool bIsDead;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Attributes|Stamina", meta = (AllowPrivateAccess = "true"))
-	float MaxStamina;
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Attributes|Stamina", meta = (AllowPrivateAccess = "true"))
-	float CurrentStamina;
 
 	// Interaction System
 	UPROPERTY(EditDefaultsOnly, Category = "Interaction", meta = (AllowPrivateAccess = "true"))
@@ -169,8 +162,6 @@ protected:
 	// Advanced Movement
 	void INT_Dodge();
 
-	void UpdateStamina();
-
 	// Interaction System
 	void PerformInteractionCheck();
 
@@ -214,8 +205,6 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Combat|Blocking")
 	void StopBlock();
 	
-	UFUNCTION(BlueprintCallable, Category = "Movement|Stamina")
-	void ChangeStamina(float Val);
 	// Health
 	UFUNCTION(BlueprintImplementableEvent, Category = Health)
 	void Death();

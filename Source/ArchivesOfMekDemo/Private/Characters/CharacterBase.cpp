@@ -10,6 +10,8 @@
 #include "Kismet/GameplayStatics.h"
 
 #include "Core/ArchivesOfMekDemoGameModeBase.h"
+#include "Core/Components/CustomMovementComponent.h"
+#include "Core/Components/HealthComponent.h"
 #include "Core/Components/InventoryComponent.h"
 
 #include "Core/Components/InteractionComponent.h"
@@ -23,30 +25,26 @@ ACharacterBase::ACharacterBase() :
 	PrimaryActorTick.bCanEverTick = true;
 
 	// Initialize CameraBoom Component
-	CameraBoom = CreateDefaultSubobject<USpringArmComponent>("CameraBoom");
+	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(GetRootComponent());
 	CameraBoom->TargetArmLength = 600.f;
 	CameraBoom->bUsePawnControlRotation = true;
 
 	// Initialize Camera Component
-	FollowCamera = CreateDefaultSubobject<UCameraComponent>("FollowCamera");
+	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
 
-	GameMode = Cast<AArchivesOfMekDemoGameModeBase>(UGameplayStatics::GetGameMode(AActor::GetWorld()));
+	// Initialize Stat Components
+	HealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
+	CustomMovementComponent = CreateDefaultSubobject<UCustomMovementComponent>(TEXT("CustomMovementComponent"));
 
 	// Initialize Variables
 	BaseTurnRate = 65.f;
 	BaseLookUpRate = 65.f;
-
-	bIsDead = false;
-	MaxHealth = 100.f;
-	CurrentHealth = MaxHealth;
+	
 	BaseWalkSpeed = 600.f;
 	SprintWalkSpeed = BaseWalkSpeed * 1.5f;
-
-	MaxStamina = 100.f;
-	CurrentStamina = MaxStamina;
 
 	bCanDodge = true;
 	bCanAttack = true;
@@ -104,11 +102,7 @@ float ACharacterBase::GetRemainingInteractTime() const
 float ACharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
 	AActor* DamageCauser)
 {
-	if(CurrentHealth - DamageAmount <= 0.f)
-		CurrentHealth = 0.f;
-	else
-		CurrentHealth -= DamageAmount;
-	
+	HealthComponent->UpdateHealth(DamageAmount);
 	return DamageAmount;
 }
 
@@ -116,6 +110,9 @@ float ACharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 void ACharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
+
+	GameMode = Cast<AArchivesOfMekDemoGameModeBase>(UGameplayStatics::GetGameMode(AActor::GetWorld()));
+	CustomMovementComponent->Initialize(this);
 }
 
 // Called every frame
@@ -124,13 +121,13 @@ void ACharacterBase::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	// Check if dead
-	if (CurrentHealth <= 0 && !bIsDead)
+	if (HealthComponent->Died())
 		INT_Death();
 
 	if (GameMode)
 		if (GameMode->GetDifficulty() == EDifficulty::ED_Pro)
 		{
-			UpdateStamina();
+			CustomMovementComponent->ProModeStaminaUpdate(HealthComponent->GetCurrentHealth());
 		}
 
 	if (IsInteracting() || GetWorld()->TimeSince(InteractionData.LastInteractionCheckTime) > InteractionCheckFrequency)
@@ -193,12 +190,12 @@ void ACharacterBase::MoveRight(float Value)
 
 void ACharacterBase::Sprint()
 {
-	GetCharacterMovement()->MaxWalkSpeed = SprintWalkSpeed;
+	CustomMovementComponent->StartSprint();
 }
 
 void ACharacterBase::StopSprint()
 {
-	GetCharacterMovement()->MaxWalkSpeed = BaseWalkSpeed;
+	CustomMovementComponent->StopSprint();
 }
 
 void ACharacterBase::TurnAtRate(float Rate)
@@ -406,11 +403,6 @@ void ACharacterBase::INT_ComboLogic()
 	}
 }
 
-void ACharacterBase::ChangeStamina(float Val)
-{
-	CurrentStamina -= Val;
-}
-
 bool ACharacterBase::INT_ComboNumCheck() const
 {
 	if (AttackCount > 1)
@@ -442,7 +434,7 @@ void ACharacterBase::JumpAttackCheck()
 
 void ACharacterBase::INT_Death()
 {
-	bIsDead = true;
+	HealthComponent->SetIsDead();
 	bCanDodge = false;
 	bCanAttack = false;
 	bCanBlock = false;
@@ -456,13 +448,6 @@ void ACharacterBase::INT_Dodge()
 		bIsDodging = true;
 		Dodge();
 	}
-}
-
-void ACharacterBase::UpdateStamina()
-{
-	MaxStamina = CurrentHealth;
-	if (CurrentStamina > MaxStamina)
-		CurrentStamina = MaxStamina;
 }
 
 void ACharacterBase::PerformInteractionCheck()
