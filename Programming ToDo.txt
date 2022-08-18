@@ -1,0 +1,13 @@
+Split Health, Stamina and other character stats into actor components that make them more easily managable in Blueprints.
+
+Make AArmor and AWeapon classes Based on AItem
+
+AArmor can be further specialized into classes for different pieces (Head, Body, Arms, Legs, etc.)
+
+Create Armor and Weapon components that contain references to AArmor and AWeapon objects.
+
+Characters contain a combat component that features logic to determine which attack to play using a map of animation assets with the key being attack type enum.
+
+Pickup Rework
+
+Inventory Rework
