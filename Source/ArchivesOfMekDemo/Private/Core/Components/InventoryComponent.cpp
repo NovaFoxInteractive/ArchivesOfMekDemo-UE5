@@ -90,13 +90,6 @@ void UInventoryComponent::SetCapacity(const int32 NewCapacity)
 	Capacity = NewCapacity;
 }
 
-int32 UInventoryComponent::ConsumeItem(UItem* Item)
-{
-	if(Item)
-		return ConsumeItem(Item, Item->GetQuantity());
-	return 0;
-}
-
 int32 UInventoryComponent::ConsumeItem(UItem* Item, const int32 Quantity)
 {
 	if(GetOwner() && Item)

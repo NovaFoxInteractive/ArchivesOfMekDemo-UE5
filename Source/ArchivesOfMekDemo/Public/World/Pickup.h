@@ -15,7 +15,7 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category=Components, meta=(AllowPrivateAccess="true"))
 	UStaticMeshComponent* PickupMesh;
 
-	UPROPERTY(EditDefaultsOnly, Category=Components, meta=(AllowPrivateAccess="true"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category=Components, meta=(AllowPrivateAccess="true"))
 	class UInteractionComponent* InteractionComponent;
 	
 public:	

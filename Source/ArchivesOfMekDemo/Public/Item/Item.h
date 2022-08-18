@@ -59,6 +59,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Item", meta=(AllowProtectedAccess="true"))
 	bool bStackable;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Item", meta=(AllowProtectedAccess="true"))
+	bool bConsumable;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Item", meta=(EditCondition = bStackable), meta=(AllowProtectedAccess="true"))
 	int32 MaxStackSize;
 
@@ -73,9 +76,6 @@ protected:
 	UPROPERTY()
 	class UInventoryComponent* OwningInventory;
 
-	UPROPERTY()
-	int32 RepKey;
-
 public:
 	/*
 	FORCEINLINE UTexture2D* GetThumbnail() const { return Thumbnail; }
@@ -89,8 +89,7 @@ public:
 	FORCEINLINE int32 GetMaxStackSize() const { return MaxStackSize; }
 	FORCEINLINE float GetWeight() const	{ return Weight; }
 	FORCEINLINE bool GetIsStackable() const { return bStackable; }
-	
-	FORCEINLINE int32 GetRepKey() const { return RepKey; }
+	FORCEINLINE bool GetConsumable() const { return bConsumable; }
 
 	UFUNCTION(BlueprintCallable, Category="Item")
 	FORCEINLINE float GetStackWeight() const { return Quantity * Weight; }
@@ -102,8 +101,11 @@ public:
 	FORCEINLINE int32 GetQuantity() const {return Quantity;}
 
 	void SetOwningInventory(class UInventoryComponent* InventoryComponent);
+
+	virtual void Use_Int(class ACharacterBase* Character);
+	UFUNCTION(BlueprintImplementableEvent)
+	void Use(ACharacterBase* Character);
 	
-	virtual void Use(class ACharacterBase* Character);
 	virtual void AddedToInventory(class UInventoryComponent* Inventory);
 
 };

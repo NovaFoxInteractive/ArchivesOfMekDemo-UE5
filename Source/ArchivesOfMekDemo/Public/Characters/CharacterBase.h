@@ -126,6 +126,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Items")
 	void UseItem(class UItem* Item);
 
+	UFUNCTION(BlueprintCallable, Category = "Items")
+	void DropItem(UItem* Item, const int32 Quantity);
+
+	UPROPERTY(EditDefaultsOnly, Category = "Items")
+	TSubclassOf<class APickup> PickupClass;
+
 	bool IsInteracting() const;
 	float GetRemainingInteractTime() const;
 
@@ -174,7 +180,10 @@ protected:
 
 	void BeginInteract();
 	void EndInteract();
-public:	
+public:
+	UFUNCTION(BlueprintCallable)
+	void InteractCheckOverlap(class UInteractionComponent* Interactable);
+	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 

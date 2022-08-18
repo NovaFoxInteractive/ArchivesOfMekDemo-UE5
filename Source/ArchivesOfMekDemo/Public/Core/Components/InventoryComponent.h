@@ -100,7 +100,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category=Inventory)
 	void SetCapacity(const int32 NewCapacity);
 
-	int32 ConsumeItem(class UItem* Item);
 	int32 ConsumeItem(class UItem* Item, const int32 Quantity = 1);
 
 protected:

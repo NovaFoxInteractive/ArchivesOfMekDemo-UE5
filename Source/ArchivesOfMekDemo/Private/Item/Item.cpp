@@ -23,8 +23,7 @@ UItem::UItem() :
 ItemDisplayName(LOCTEXT("ItemName", "Item")),
 UseActionText(LOCTEXT("ItemUseActionText", "Use")),
 Weight(0.f),
-bStackable(true), MaxStackSize(2), Quantity(1),
-RepKey(0)
+bStackable(true), MaxStackSize(2), Quantity(1)
 {
 	
 }
@@ -47,8 +46,10 @@ void UItem::SetOwningInventory(UInventoryComponent* InventoryComponent)
 	OwningInventory = InventoryComponent;
 }
 
-void UItem::Use(ACharacterBase* Character)
+void UItem::Use_Int(ACharacterBase* Character)
 {
+	Use(Character);
+	
 }
 
 void UItem::AddedToInventory(UInventoryComponent* Inventory)

@@ -4,6 +4,7 @@
 
 #include "Log.h"
 #include "Camera/CameraComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -12,6 +13,7 @@
 #include "Core/Components/InventoryComponent.h"
 
 #include "Core/Components/InteractionComponent.h"
+#include "World/Pickup.h"
 
 // Sets default values
 ACharacterBase::ACharacterBase() :
@@ -58,7 +60,35 @@ ACharacterBase::ACharacterBase() :
 void ACharacterBase::UseItem(UItem* Item)
 {
 	if(!PlayerInventory || !Item || !PlayerInventory->FindItem(Item)) return;
-	Item->Use(this);
+	Item->Use_Int(this);
+
+	if(Item->GetConsumable())
+		PlayerInventory->ConsumeItem(Item, 1);
+}
+
+void ACharacterBase::DropItem(UItem* Item, const int32 Quantity)
+{
+	if(Item && PlayerInventory->FindItem(Item))
+	{
+		UE_LOG(LogArchivesOfMek, Warning, TEXT("Dropping item"));
+		
+		const int32 ItemQuantity = Item->GetQuantity();
+		const int32 DroppedQuantity = PlayerInventory->ConsumeItem(Item, Quantity);
+
+		FActorSpawnParameters SpawnParameters;
+		SpawnParameters.Owner = this;
+		SpawnParameters.bNoFail = true;
+		SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+		FVector SpawnLocation = GetActorLocation();
+		SpawnLocation.Z -= GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+
+		const FTransform SpawnTransform(GetActorRotation(), SpawnLocation);
+		ensure(PickupClass);
+
+		APickup* Pickup = GetWorld()->SpawnActor<APickup>(PickupClass, SpawnTransform, SpawnParameters);
+		Pickup->InitializePickup(Item->GetClass(), DroppedQuantity);
+	}
 }
 
 bool ACharacterBase::IsInteracting() const
@@ -86,7 +116,6 @@ float ACharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 void ACharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
-
 }
 
 // Called every frame
@@ -544,6 +573,11 @@ void ACharacterBase::EndInteract()
 	{
 		Interactable->EndInteract(this);
 	}
+}
+
+void ACharacterBase::InteractCheckOverlap(UInteractionComponent* Interactable)
+{
+	FoundNewInteractable(Interactable);
 }
 
 void ACharacterBase::INT_Block()

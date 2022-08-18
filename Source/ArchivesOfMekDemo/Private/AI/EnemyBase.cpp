@@ -34,12 +34,13 @@ AEnemyBase::AEnemyBase():
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	// Sets the Collision volume to agro the enemy.
 	AgroSphere = CreateDefaultSubobject<USphereComponent>(TEXT("AgroShpere"));
 	AgroSphere->SetupAttachment(GetRootComponent());
-
+	// Sets the Collision volume for telling the enemy to attack the player.
 	CombatRangeSphere = CreateDefaultSubobject<USphereComponent>(TEXT("CombatRange"));
 	CombatRangeSphere->SetupAttachment(GetRootComponent());
-
+	// Sets the Collision volume for the enemy's weapons.
 	LeftWeaponCollision = CreateDefaultSubobject<UBoxComponent>(TEXT("LeftWeaponBox"));
 	LeftWeaponCollision->SetupAttachment(GetMesh(), FName("LeftWeaponBone"));
 	RightWeaponCollision = CreateDefaultSubobject<UBoxComponent>(TEXT("RightWeaponBox"));
@@ -51,14 +52,16 @@ void AEnemyBase::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// Setups up dynamic overlap functions for collision volumes.
 	AgroSphere->OnComponentBeginOverlap.AddDynamic(this, &AEnemyBase::AgroSphereOverlap);
-	
+
 	CombatRangeSphere->OnComponentBeginOverlap.AddDynamic(this, &AEnemyBase::CombatRangeOverlap);
 	CombatRangeSphere->OnComponentEndOverlap.AddDynamic(this, &AEnemyBase::CombatRangeEndOverlap);
-	
+
 	LeftWeaponCollision->OnComponentBeginOverlap.AddDynamic(this, &AEnemyBase::OnLeftWeaponOverlap);
 	RightWeaponCollision->OnComponentBeginOverlap.AddDynamic(this, &AEnemyBase::OnRightWeaponOverlap);
 
+	// Sets collision settings to disable collision for weapons when not attaking
 	LeftWeaponCollision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	LeftWeaponCollision->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
 	LeftWeaponCollision->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
@@ -68,18 +71,21 @@ void AEnemyBase::BeginPlay()
 	RightWeaponCollision->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
 	RightWeaponCollision->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	RightWeaponCollision->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
-	
+
+	// Sets up collision for the enemy mesh and hitbox
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 
+	// Gets references to world and enemy controller.
 	WorldRef = GetWorld();
-
 	EnemyController = Cast<AEnemyControllerBase>(GetController());
 
+	// Sets patrol points
 	const FVector WorldPatrolPoint = UKismetMathLibrary::TransformLocation(GetActorTransform(), PatrolPoint);
 	const FVector WorldPatrolPoint2 = UKismetMathLibrary::TransformLocation(GetActorTransform(), PatrolPoint2);
 
+	// Sets up AI Blackboard and Behavior Tree
 	if(EnemyController)
 	{
 		EnemyController->GetBlackboardComponent()->SetValueAsVector(TEXT("PatrolPoint"), WorldPatrolPoint);
@@ -92,7 +98,7 @@ void AEnemyBase::BeginPlay()
 	
 }
 
-#if WITH_EDITOR
+#if WITH_EDITOR	// Clamps StunChance to between 0 and 1.
 void AEnemyBase::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
@@ -108,6 +114,7 @@ void AEnemyBase::AgroSphereOverlap(UPrimitiveComponent* OverlappedComp, AActor* 
 {
 	if(!OtherActor) return;
 
+	// If player overlaps the enemy's agro sphere collision volume, set the attack target in the blackboard.
 	if (const auto Character = Cast<ACharacterBase>(OtherActor))
 		EnemyController->GetBlackboardComponent()->SetValueAsObject(TEXT("Target"), Character);
 	
@@ -118,6 +125,7 @@ void AEnemyBase::CombatRangeOverlap(UPrimitiveComponent* OverlappedComp, AActor*
 {
 	if (OtherActor == nullptr) return;
 
+	// If player overlaps the enemy's combat sphere collision volume, set the can attack value in the blackboard.
 	if (const auto Character = Cast<ACharacterBase>(OtherActor))
 	{
 		bInAttackRange = true;
@@ -131,6 +139,7 @@ void AEnemyBase::CombatRangeEndOverlap(UPrimitiveComponent* OverlappedComponent,
 {
 	if (OtherActor == nullptr) return;
 
+	// If player stops overlapping the enemy's combat sphere collision volume, set the can attack value in the blackboard.
 	if (const auto Character = Cast<ACharacterBase>(OtherActor))
 	{
 		bInAttackRange = false;
@@ -144,6 +153,7 @@ void AEnemyBase::OnLeftWeaponOverlap(UPrimitiveComponent* OverlappedComp, AActor
 {
 	if(OtherActor == nullptr) return;
 
+	// If weapon overlaps the player, damage the player.
 	if (const auto Character = Cast<ACharacterBase>(OtherActor))
 	{
 		DoDamage(Character);
@@ -156,6 +166,7 @@ void AEnemyBase::OnRightWeaponOverlap(UPrimitiveComponent* OverlappedComp, AActo
 {
 	if(OtherActor == nullptr) return;
 
+	// If weapon overlaps the player, damage the player.
 	if (const auto Character = Cast<ACharacterBase>(OtherActor))
 	{
 		DoDamage(Character);
@@ -185,6 +196,7 @@ void AEnemyBase::DeactivateRightWeapon()
 
 void AEnemyBase::DoDamage(ACharacterBase* Character)
 {
+	// Damage character and play impact sound
 	UGameplayStatics::ApplyDamage(Character, BaseDamage, EnemyController, this, UDamageType::StaticClass());
 	if(Character->GetMeleeImpactSound())
 		UGameplayStatics::PlaySoundAtLocation(this, Character->GetMeleeImpactSound(), GetActorLocation());
@@ -192,6 +204,7 @@ void AEnemyBase::DoDamage(ACharacterBase* Character)
 
 void AEnemyBase::SpawnBlood(ACharacterBase* Victim, FName SocketName)
 {
+	// Spawn blood at the tip of the weapon
 	const USkeletalMeshSocket* TipSocket{ GetMesh()->GetSocketByName(SocketName) };
 	if(TipSocket)
 	{
@@ -203,6 +216,7 @@ void AEnemyBase::SpawnBlood(ACharacterBase* Victim, FName SocketName)
 
 FName AEnemyBase::GetAttackSectionName() const
 {
+	// Randomly select attack animation.
 	FName SectionName;
 	switch (const int32 Section{FMath::RandRange(1, 4)})
 	{
@@ -224,7 +238,7 @@ FName AEnemyBase::GetAttackSectionName() const
 
 void AEnemyBase::Die()
 {
-	if(bDying) return;
+	if(bDying) return; // Only run through this function once.
 	bDying = true;
 	
 	HideHealthBar();
@@ -232,8 +246,9 @@ void AEnemyBase::Die()
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 
 	if(AnimInstance && DeathMontage)
-		AnimInstance->Montage_Play(DeathMontage);
+		AnimInstance->Montage_Play(DeathMontage);	// Play death animation
 
+	// Set blackboard variable that stops the behavior tree from running
 	if(EnemyController)
 	{
 		EnemyController->GetBlackboardComponent()->SetValueAsBool(FName("Dead"), true);
@@ -243,14 +258,16 @@ void AEnemyBase::Die()
 
 void AEnemyBase::FinishDeath()
 {
+	// Stop animations after death
 	GetMesh()->bPauseAnims = true;
 
+	// Set timer to destroy enemy and remove the instance from the world
 	GetWorldTimerManager().SetTimer(DeathTimer, this, &AEnemyBase::DestroyEnemy, DeathTime);
 }
 
 void AEnemyBase::DestroyEnemy()
 {
-	Destroy();
+	Destroy(); // Remove instance from the world
 }
 
 void AEnemyBase::SetStunned(bool Stunned)
