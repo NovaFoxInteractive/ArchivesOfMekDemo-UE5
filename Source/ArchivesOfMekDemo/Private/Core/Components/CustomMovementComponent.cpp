@@ -8,7 +8,8 @@
 
 // Sets default values for this component's properties
 UCustomMovementComponent::UCustomMovementComponent() :
-	SprintSpeed(550.f), WalkSpeed(275.f),
+	WalkSpeed(600.f), SprintSpeed(WalkSpeed * 1.5f),
+    bIsDodging(false), bCanDodge(true), TimeBetweenDodge(5.f),
 	MaxStamina(100.f), MinStamina(0.f), CurrentStamina(MaxStamina),
 	StaminaDepletionRate(0.1f), StaminaRecoveryRate(0.03f), StaminaRecoveryDelayRate(5.f)
 {
@@ -50,6 +51,24 @@ void UCustomMovementComponent::ProModeStaminaUpdate(const float CurrentHealth)
 	MaxStamina = CurrentHealth;
 	if (CurrentStamina > MaxStamina)
 		CurrentStamina = MaxStamina;
+}
+
+bool UCustomMovementComponent::Dodge()
+{
+	if (bCanDodge && !PlayerRef->GetIsAttacking() && !bIsDodging && !(PlayerRef->GetCharacterMovement()->IsFalling()))
+	{
+		bIsDodging = true;
+		OnDodge.Broadcast();
+		return true;
+	}
+	return false;
+}
+
+void UCustomMovementComponent::StopDodge()
+{
+	bIsDodging = false;
+	bCanDodge = false;
+	GetWorld()->GetTimerManager().SetTimer(DodgeResetTimer, this, &UCustomMovementComponent::ResetDodge, TimeBetweenDodge, false);
 }
 
 // Called when the game starts

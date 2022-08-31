@@ -3,109 +3,36 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/NoExportTypes.h"
+#include "GameFramework/Actor.h"
+#include "Structs/ItemData.h"
 #include "Item.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnItemModified);
 
-UENUM(BlueprintType)
-enum class EItemRarity : uint8
-{
-	EIR_Common UMETA(DisplayName = "Common"),
-	EIR_Uncommon UMETA(DisplayName = "Uncommon"),
-	EIR_Rare UMETA(DisplayName = "Rare"),
-	EIR_Epic UMETA(DisplayName = "Epic"),
-	EIR_Legendary UMETA(DisplayName = "Legendary")
-};
-
-UCLASS(Blueprintable, EditInlineNew, DefaultToInstanced)
-class ARCHIVESOFMEKDEMO_API UItem : public UObject
+UCLASS()
+class ARCHIVESOFMEKDEMO_API AItem : public AActor
 {
 	GENERATED_BODY()
 	
+public:	
+	// Sets default values for this actor's properties
+	AItem();
+
+	virtual bool UseItem_Int();
+	
+	UFUNCTION(BlueprintNativeEvent)
+	bool UseItem();
+
 protected:
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
 
-	#if WITH_EDITOR
-	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
-#endif
-	
-public:
-	UItem();
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	FItemData ItemData;
 
-	UPROPERTY(BlueprintAssignable)
-	FOnItemModified OnItemModified;
-protected:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Item", meta=(AllowProtectedAccess="true"))
-	class UStaticMesh* PickupMesh;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Item", meta=(AllowProtectedAccess="true"))
-	class UTexture2D* Thumbnail;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Item", meta=(AllowProtectedAccess="true"))
-	FText ItemDisplayName;
+public:	
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Item", meta=(MultiLine="true"), meta=(AllowProtectedAccess="true"))
-	FText ItemDescription;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Item", meta=(AllowProtectedAccess="true"))
-	FText UseActionText;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Item", meta=(AllowProtectedAccess="true"))
-	EItemRarity Rarity;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Item", meta=(AllowProtectedAccess="true"))
-	float Weight;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Item", meta=(AllowProtectedAccess="true"))
-	bool bStackable;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Item", meta=(AllowProtectedAccess="true"))
-	bool bConsumable;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Item", meta=(EditCondition = bStackable), meta=(AllowProtectedAccess="true"))
-	int32 MaxStackSize;
-
-	/*
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Item", meta=(AllowProtectedAccess="true"))
-	TSubclassOf<class UItemToolTip> ItemToolTip;
-	*/
-
-	UPROPERTY(EditAnywhere, Category="Item", meta=(UIMin = 1 , EditCondition = bStackable), meta=(AllowProtectedAccess="true"))
-	int32 Quantity;
-
-	UPROPERTY()
-	class UInventoryComponent* OwningInventory;
-
-public:
-	/*
-	FORCEINLINE UTexture2D* GetThumbnail() const { return Thumbnail; }
-	FORCEINLINE FText GetItemDescription() const { return ItemDescription; }
-	FORCEINLINE FText GetUseActionText() const { return UseActionText; }
-	FORCEINLINE EItemRarity GetRarity() const { return Rarity; }
-	FORCEINLINE int32 GetQuantity() const { return Quantity; }
-    */
-	FORCEINLINE UStaticMesh* GetPickupMesh() const { return PickupMesh; }
-	FORCEINLINE FText GetItemDisplayName() const { return ItemDisplayName; }
-	FORCEINLINE int32 GetMaxStackSize() const { return MaxStackSize; }
-	FORCEINLINE float GetWeight() const	{ return Weight; }
-	FORCEINLINE bool GetIsStackable() const { return bStackable; }
-	FORCEINLINE bool GetConsumable() const { return bConsumable; }
-
-	UFUNCTION(BlueprintCallable, Category="Item")
-	FORCEINLINE float GetStackWeight() const { return Quantity * Weight; }
-	UFUNCTION(BlueprintPure, Category="Item")
-	virtual bool ShouldShowInInventory() const;
-	UFUNCTION(BlueprintCallable, Category="Item")
-	void SetQuantity(const int32 NewQuantity);
-	UFUNCTION(BlueprintPure, Category="Item")
-	FORCEINLINE int32 GetQuantity() const {return Quantity;}
-
-	void SetOwningInventory(class UInventoryComponent* InventoryComponent);
-
-	virtual void Use_Int(class ACharacterBase* Character);
-	UFUNCTION(BlueprintImplementableEvent)
-	void Use(ACharacterBase* Character);
-	
-	virtual void AddedToInventory(class UInventoryComponent* Inventory);
+	FORCEINLINE FItemData GetItemData() const { return ItemData; }
 
 };

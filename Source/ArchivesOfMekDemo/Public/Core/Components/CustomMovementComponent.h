@@ -6,6 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "CustomMovementComponent.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDodge);
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class ARCHIVESOFMEKDEMO_API UCustomMovementComponent : public UActorComponent
@@ -18,10 +19,17 @@ class ARCHIVESOFMEKDEMO_API UCustomMovementComponent : public UActorComponent
 
 	// Movement Values
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Values|Sprint", meta=(AllowPrivateAccess="true"))
+	float WalkSpeed;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Values|Sprint", meta=(AllowPrivateAccess="true"))
 	float SprintSpeed;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Values|Sprint", meta=(AllowPrivateAccess="true"))
-	float WalkSpeed;
+	// Movement
+	UPROPERTY(BlueprintReadWrite, Category = "Values|Dodge", meta = (AllowPrivateAccess = "true"))
+	bool bIsDodging;
+	UPROPERTY(BlueprintReadWrite, Category = "Values|Dodge", meta = (AllowPrivateAccess = "true"))
+	bool bCanDodge;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Values|Dodge", meta = (AllowPrivateAccess = "true"))
+	float TimeBetweenDodge;
 	
 	// Stamina
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Values|Sprint", meta = (AllowPrivateAccess = "true"))
@@ -48,9 +56,14 @@ class ARCHIVESOFMEKDEMO_API UCustomMovementComponent : public UActorComponent
 
 	FTimerHandle StaminaRecoveryTimer;
 
+	FTimerHandle DodgeResetTimer;
+
 public:
 	// Sets default values for this component's properties
 	UCustomMovementComponent();
+
+	UPROPERTY(BlueprintAssignable)
+	FOnDodge OnDodge;
 	
 	void Initialize(ACharacterBase* Character);
 	
@@ -60,6 +73,11 @@ public:
 
 	void ProModeStaminaUpdate(float CurrentHealth);
 
+	bool Dodge();
+
+	void StopDodge();
+
+	FORCEINLINE void ResetDodge() { bCanDodge = true; }
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -75,5 +93,9 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 	                           FActorComponentTickFunction* ThisTickFunction) override;
+
+	FORCEINLINE bool GetIsDodging() const { return bIsDodging; }
+	
+	FORCEINLINE void SetCanDodge(const bool Value) { bCanDodge = Value; }
 	
 };

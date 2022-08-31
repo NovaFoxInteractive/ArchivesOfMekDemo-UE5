@@ -3,58 +3,29 @@
 #include "Item/Item.h"
 #include "Core/Components/InventoryComponent.h"
 
-#define LOCTEXT_NAMESPACE "Item"
-
-#if WITH_EDITOR
-void UItem::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+AItem::AItem()
 {
-	Super::PostEditChangeProperty(PropertyChangedEvent);
-
-	const FName ChangedPropertyName = PropertyChangedEvent.Property ? PropertyChangedEvent.Property->GetFName() : NAME_None;
-
-	if(ChangedPropertyName == GET_MEMBER_NAME_CHECKED(UItem, Quantity))
-	{
-		Quantity = FMath::Clamp(Quantity, 1, bStackable ? MaxStackSize : 1);
-	}
-}
-#endif
-
-UItem::UItem() :
-ItemDisplayName(LOCTEXT("ItemName", "Item")),
-UseActionText(LOCTEXT("ItemUseActionText", "Use")),
-Weight(0.f),
-bStackable(true), MaxStackSize(2), Quantity(1)
-{
+	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	PrimaryActorTick.bCanEverTick = true;
 	
 }
 
-bool UItem::ShouldShowInInventory() const
+bool AItem::UseItem_Int()
+{
+	return UseItem();
+}
+
+bool AItem::UseItem_Implementation()
 {
 	return true;
 }
 
-void UItem::SetQuantity(const int32 NewQuantity)
+void AItem::BeginPlay()
 {
-	if(NewQuantity != Quantity)
-	{
-		Quantity = FMath::Clamp(NewQuantity, 0, bStackable ? MaxStackSize : 1);
-	}
+	Super::BeginPlay();
 }
 
-void UItem::SetOwningInventory(UInventoryComponent* InventoryComponent)
+void AItem::Tick(float DeltaTime)
 {
-	OwningInventory = InventoryComponent;
+	Super::Tick(DeltaTime);
 }
-
-void UItem::Use_Int(ACharacterBase* Character)
-{
-	Use(Character);
-	
-}
-
-void UItem::AddedToInventory(UInventoryComponent* Inventory)
-{
-}
-
-#undef LOCTEXT_NAMESPACE
-

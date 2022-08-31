@@ -14,7 +14,8 @@ public class ArchivesOfMekDemo : ModuleRules
 			"Engine", 
 			"InputCore",
 			"AIModule",
-			"NavigationSystem"
+			"NavigationSystem",
+			"UMG"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });

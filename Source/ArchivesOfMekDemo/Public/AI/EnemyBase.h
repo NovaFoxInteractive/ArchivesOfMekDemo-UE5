@@ -31,6 +31,10 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat|Components", meta = (AllowPrivateAccess = "true"))
 	USphereComponent* CombatRangeSphere;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attributes|Health", meta = (AllowPrivateAccess = "true"))
+	class UHealthComponent* HealthComponent;
+	
 	//// Behavior Tree
 	UPROPERTY(EditAnywhere, Category = "Behavior Tree", meta = (AllowPrivateAccess = "true"))
 	class UBehaviorTree* BehaviorTree;
@@ -42,13 +46,6 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Behavior Tree", meta = (AllowPrivateAccess = "true", MakeEditWidget = "true"))
 	FVector PatrolPoint2;
 	
-	/// Base Stats
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat|Health", meta = (AllowPrivateAccess = "true"))
-	float Health;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat|Health", meta = (AllowPrivateAccess = "true"))
-	float MaxHealth;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat|Health", meta = (AllowPrivateAccess = "true"))
 	float HealthBarDisplayTime;
 	
@@ -113,8 +110,6 @@ private:
 	//// Death
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat|Death", meta = (AllowPrivateAccess = "true"))
 	UAnimMontage* DeathMontage;
-
-	bool bDying;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat|Death", meta = (AllowPrivateAccess = "true"))
 	float DeathTime;

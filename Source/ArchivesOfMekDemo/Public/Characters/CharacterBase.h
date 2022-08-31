@@ -3,31 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Components/SphereComponent.h"
 #include "GameFramework/Character.h"
 #include "GlobalEnum/EAttackType.h"
 #include "GlobalEnum/EAttackAnim.h"
+#include "Core/Components/InventoryComponent.h"
 #include "CharacterBase.generated.h"
-
-USTRUCT()
-struct FInteractionData
-{
-	GENERATED_BODY()
-	
-	FInteractionData() :
-		ViewedInteractionComponent(nullptr), LastInteractionCheckTime(0.f), bInteractHeld(false)
-	{
-
-	}
-	
-	UPROPERTY()
-	class UInteractionComponent* ViewedInteractionComponent;	
-
-	UPROPERTY()
-	float LastInteractionCheckTime;
-
-	UPROPERTY()
-	bool bInteractHeld;
-};
 
 UCLASS()
 class ARCHIVESOFMEKDEMO_API ACharacterBase : public ACharacter
@@ -46,6 +27,12 @@ class ARCHIVESOFMEKDEMO_API ACharacterBase : public ACharacter
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attributes|Health", meta = (AllowPrivateAccess = "true"))
 	class UCustomMovementComponent* CustomMovementComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"))
+	class USphereComponent* PickupTraceCollision;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Inventory ,meta = (AllowPrivateAccess = "true"))
+	UInventoryComponent* Inventory;
 	
 	UPROPERTY(BlueprintReadOnly, Category = GameMode, meta = (AllowPrivateAccess = "true"))
 	class AArchivesOfMekDemoGameModeBase* GameMode;
@@ -55,17 +42,7 @@ class ARCHIVESOFMEKDEMO_API ACharacterBase : public ACharacter
 	float BaseTurnRate;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	float BaseLookUpRate;
-
-	// Movement
-	UPROPERTY(BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	bool bIsDodging;
-	UPROPERTY(BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	bool bCanDodge;
-	UPROPERTY(EditDefaultsOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	float BaseWalkSpeed;
-	UPROPERTY(EditDefaultsOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	float SprintWalkSpeed;
-
+	
 	// Combat
 	UPROPERTY(BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	bool bIsAttacking;
@@ -94,15 +71,6 @@ class ARCHIVESOFMEKDEMO_API ACharacterBase : public ACharacter
 	UPROPERTY(BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	EAttackAnim AnimNum;
 
-	// Interaction System
-	UPROPERTY(EditDefaultsOnly, Category = "Interaction", meta = (AllowPrivateAccess = "true"))
-	float InteractionCheckFrequency;
-	UPROPERTY(EditDefaultsOnly, Category = "Interaction", meta = (AllowPrivateAccess = "true"))
-	float InteractionCheckDistance;
-	UPROPERTY()
-	FInteractionData InteractionData;
-	FTimerHandle TimerHandle_Interact;
-
 	// Damage Aesthetics
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat|Damage|Aesthetics", meta = (AllowPrivateAccess = "true"))
 	class USoundCue* MeleeImpactSound;
@@ -112,18 +80,6 @@ class ARCHIVESOFMEKDEMO_API ACharacterBase : public ACharacter
 public:
 	// Sets default values for this character's properties
 	ACharacterBase();
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Components")
-	class UInventoryComponent* PlayerInventory;
-
-	UFUNCTION(BlueprintCallable, Category = "Items")
-	void UseItem(class UItem* Item);
-
-	UFUNCTION(BlueprintCallable, Category = "Items")
-	void DropItem(UItem* Item, const int32 Quantity);
-
-	UPROPERTY(EditDefaultsOnly, Category = "Items")
-	TSubclassOf<class APickup> PickupClass;
 
 	bool IsInteracting() const;
 	float GetRemainingInteractTime() const;
@@ -162,18 +118,7 @@ protected:
 	// Advanced Movement
 	void INT_Dodge();
 
-	// Interaction System
-	void PerformInteractionCheck();
-
-	void CouldntFindInteractable();
-	void FoundNewInteractable(UInteractionComponent* Interactable);
-	void Interact();
-
-	void BeginInteract();
-	void EndInteract();
 public:
-	UFUNCTION(BlueprintCallable)
-	void InteractCheckOverlap(class UInteractionComponent* Interactable);
 	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -183,12 +128,12 @@ public:
 	// Getter Functions
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
-
-	FORCEINLINE bool GetIsDodging() const { return bIsDodging; }
+	FORCEINLINE class UCustomMovementComponent* GetCustomMovement() const { return CustomMovementComponent; }
+	FORCEINLINE UInventoryComponent* GetInventoryComponent() const { return Inventory; }
+	FORCEINLINE USphereComponent* GetPickupTraceCollision() const { return PickupTraceCollision; }
+	
 	FORCEINLINE bool GetIsAttacking() const { return bIsAttacking; }
 	FORCEINLINE bool GetIsBlocking() const { return bIsBlocking; }
-
-	FORCEINLINE UInteractionComponent* GetInteractable() const { return InteractionData.ViewedInteractionComponent; }
 
 	FORCEINLINE USoundCue* GetMeleeImpactSound() const { return MeleeImpactSound; }
 	FORCEINLINE UParticleSystem* GetBloodParticles() const { return BloodParticles; }
@@ -208,7 +153,4 @@ public:
 	// Health
 	UFUNCTION(BlueprintImplementableEvent, Category = Health)
 	void Death();
-	// Advanced Movement
-	UFUNCTION(BlueprintImplementableEvent, Category = Movement)
-	void Dodge();
 };

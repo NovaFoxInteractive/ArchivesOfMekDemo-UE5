@@ -5,58 +5,35 @@
 #include "CoreMinimal.h"
 #include "Item/Item.h"
 #include "Components/ActorComponent.h"
+#include "Structs/InventoryItems.h"
 #include "InventoryComponent.generated.h"
 
-UENUM(BlueprintType)
-enum class EItemAddResult : uint8
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnUpdateInventorySlot, int32, Index);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnUpdateAmountOfSlots, int32, Amount);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnUseItem);
+
+USTRUCT()
+struct FEmptySlotReturn
 {
-	IAR_NoItemsAdded UMETA(DisplayName = "No items added"),
-	IAR_SomeItemsAdded UMETA(DisplayName = "Some items added"),
-	IAR_AllItemsAdded UMETA(DisplayName = "All items added")
+	GENERATED_BODY()
+	
+	bool bSuccess;
+	int32 Index;
+
+	FEmptySlotReturn() = default;
+	FEmptySlotReturn(const bool bSuccess, const int32 Index) : bSuccess(bSuccess), Index(Index) {}
 };
 
-USTRUCT(BlueprintType)
-struct FItemAddResult
+USTRUCT()
+struct FAddItemReturn
 {
 	GENERATED_BODY()
 
-public:
-	FItemAddResult() {}
-	FItemAddResult(const int32 InItemQuantity, const int32 InQuantityAdded = 0) : AmountToGive(InItemQuantity), ActualAmountGiven(InQuantityAdded) {}
-	
-	UPROPERTY(BlueprintReadOnly, Category="Item Add Result")
-	int32 AmountToGive;
-	UPROPERTY(BlueprintReadOnly, Category="Item Add Result")
-	int32 ActualAmountGiven;
-	UPROPERTY(BlueprintReadOnly, Category="Item Add Result")
-	EItemAddResult Result;
-	UPROPERTY(BlueprintReadOnly, Category="Item Add Result")
-	FText ErrorText;
+	bool bSuccess;
+	int32 Remainder;
 
-	// Helpers
-	static FItemAddResult AddedNone(const int32 InItemQuantity, const FText& ErrorText)
-	{
-		FItemAddResult AddedNoneResult(InItemQuantity);
-		AddedNoneResult.Result = EItemAddResult::IAR_NoItemsAdded;
-		AddedNoneResult.ErrorText = ErrorText;
-
-		return AddedNoneResult;
-	}
-	static FItemAddResult AddedSome(const int32 InItemQuantity, const int32 ActualAmountGiven, const FText& ErrorText)
-	{
-		FItemAddResult AddedSomeResult(InItemQuantity, ActualAmountGiven);
-		AddedSomeResult.Result = EItemAddResult::IAR_SomeItemsAdded;
-		AddedSomeResult.ErrorText = ErrorText;
-
-		return AddedSomeResult;
-	}
-	static FItemAddResult AddedAll(const int32 InItemQuantity)
-	{
-		FItemAddResult AddedAllResult(InItemQuantity, InItemQuantity);
-		AddedAllResult.Result = EItemAddResult::IAR_AllItemsAdded;
-
-		return AddedAllResult;
-	}
+	FAddItemReturn() = default;
+	explicit FAddItemReturn(const bool bSuccess, const int32 Remainder = 0) : bSuccess(bSuccess), Remainder( Remainder) {}
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -64,67 +41,58 @@ class ARCHIVESOFMEKDEMO_API UInventoryComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
-	friend class UItem;
+	private:
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess="true"))
+	TArray<FInventoryItems> InventorySlots;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess="true"))
+	class ACharacterBase* PlayerRef;
 
+	
 public:	
 	// Sets default values for this component's properties
 	UInventoryComponent();
 
-	UFUNCTION(BlueprintCallable, Category=Inventory)
-	FItemAddResult TryAddItem(class UItem* Item);
+	FAddItemReturn AddItem(TSubclassOf<AItem> Item, int32 Amount);
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintAssignable)
+	FOnUpdateInventorySlot OnUpdateInventorySlot;
 
-	UFUNCTION(BlueprintCallable, Category=Inventory)
-	FItemAddResult TryAddItemFromClass(TSubclassOf<class UItem> ItemClass, const int32 Quantity);
+	UPROPERTY(EditDefaultsOnly, BlueprintAssignable)
+	FOnUpdateAmountOfSlots OnUpdateAmountOfSlots;
 
-	UFUNCTION(BlueprintCallable, Category=Inventory)
-	bool RemoveItem(class UItem* Item);
+	UPROPERTY(EditDefaultsOnly, BlueprintAssignable)
+	FOnUseItem OnUseItem;
 
-	UFUNCTION(BlueprintPure, Category=Inventory)
-	bool HasItem(TSubclassOf<class UItem> ItemClass, const int32 Quantity = 1) const;
+	void SetupArray(ACharacterBase* Character);
+	
+	UFUNCTION(BlueprintCallable)
+	void UseItem(int32 Index);
+	
+	UFUNCTION(BlueprintCallable)
+	void RemoveItemAtIndex(int Index);
+	
+	UFUNCTION(BlueprintCallable)
+	void DropItemAtIndex(int Index);
 
-	UFUNCTION(BlueprintPure, Category=Inventory)
-	UItem* FindItem(const class UItem* Item) const;
+	void AddMoreSlots(int32 Amount);
+private:
+	FEmptySlotReturn CheckForEmptySlot();
 
-	UFUNCTION(BlueprintPure, Category=Inventory)
-	UItem* FindItemByClass(TSubclassOf<class UItem> ItemClass) const;
+	FEmptySlotReturn CheckForFreeSlot(TSubclassOf<AItem> Item);
 
-	UFUNCTION(BlueprintPure, Category=Inventory)
-	TArray<UItem*> FindItemsByClass(TSubclassOf<class UItem> ItemClass) const;
-
-	UFUNCTION(BlueprintPure, Category=Inventory)
-	float GetCurrentWeight() const;
-
-	UFUNCTION(BlueprintCallable, Category=Inventory)
-	void SetWeightCapacity(const float NewWeightCapacity);
-
-	UFUNCTION(BlueprintCallable, Category=Inventory)
-	void SetCapacity(const int32 NewCapacity);
-
-	int32 ConsumeItem(class UItem* Item, const int32 Quantity = 1);
 
 protected:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Inventory")
-	float WeightCapacity;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Inventory", meta=(ClampMin=0, ClampMax=200))
-	int32 Capacity;
+	// Called when the game starts
+	virtual void BeginPlay() override;
 	
-	UPROPERTY(VisibleAnywhere, Category="Inventory")
-	TArray<UItem*> Items;
+public:	
+	// Called every frame
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-private:
-	FItemAddResult Int_TryAddItem(const class UItem* Item);
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE FInventoryItems GetItemDataAtIndex(const int32 Index) const { return InventorySlots[Index]; }
 
-	/** Don't call Items.Add() directly, use this function instead as it handles replication and ownership */
-	UItem* AddItem(const class UItem* Item);
-
-public:
-	UFUNCTION(BlueprintPure, Category="Inventory")
-	FORCEINLINE float GetWeightCapacity() const { return WeightCapacity; }
-
-	UFUNCTION(BlueprintPure, Category="Inventory")
-	FORCEINLINE int32 GetCapacity() const { return Capacity; }
-
-	UFUNCTION(BlueprintPure, Category="Inventory")
-	FORCEINLINE TArray<UItem*> GetItems() const { return Items; }
+	UFUNCTION(BlueprintPure)
+	bool InvalidItemAtIndex(const int32 Index) const { return IsValid(InventorySlots[Index].Item); }
 };

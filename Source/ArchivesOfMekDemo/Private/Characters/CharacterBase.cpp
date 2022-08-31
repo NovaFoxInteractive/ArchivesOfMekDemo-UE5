@@ -5,6 +5,7 @@
 #include "Log.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/SphereComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -14,12 +15,10 @@
 #include "Core/Components/HealthComponent.h"
 #include "Core/Components/InventoryComponent.h"
 
-#include "Core/Components/InteractionComponent.h"
 #include "World/Pickup.h"
 
 // Sets default values
-ACharacterBase::ACharacterBase() :
-	InteractionCheckFrequency(0.f), InteractionCheckDistance(1000.f)
+ACharacterBase::ACharacterBase()
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -35,6 +34,10 @@ ACharacterBase::ACharacterBase() :
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
 
+	PickupTraceCollision = CreateDefaultSubobject<USphereComponent>(TEXT("PickupTraceCollision"));
+	PickupTraceCollision->SetupAttachment(GetMesh());
+	PickupTraceCollision->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+
 	// Initialize Stat Components
 	HealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
 	CustomMovementComponent = CreateDefaultSubobject<UCustomMovementComponent>(TEXT("CustomMovementComponent"));
@@ -43,60 +46,10 @@ ACharacterBase::ACharacterBase() :
 	BaseTurnRate = 65.f;
 	BaseLookUpRate = 65.f;
 	
-	BaseWalkSpeed = 600.f;
-	SprintWalkSpeed = BaseWalkSpeed * 1.5f;
-
-	bCanDodge = true;
 	bCanAttack = true;
 	bCanBlock = true;
 
-	PlayerInventory = CreateDefaultSubobject<UInventoryComponent>("PlayerInventory");
-	PlayerInventory->SetCapacity(30);
-	PlayerInventory->SetWeightCapacity(75.f);
-}
-
-void ACharacterBase::UseItem(UItem* Item)
-{
-	if(!PlayerInventory || !Item || !PlayerInventory->FindItem(Item)) return;
-	Item->Use_Int(this);
-
-	if(Item->GetConsumable())
-		PlayerInventory->ConsumeItem(Item, 1);
-}
-
-void ACharacterBase::DropItem(UItem* Item, const int32 Quantity)
-{
-	if(Item && PlayerInventory->FindItem(Item))
-	{
-		UE_LOG(LogArchivesOfMek, Warning, TEXT("Dropping item"));
-		
-		const int32 ItemQuantity = Item->GetQuantity();
-		const int32 DroppedQuantity = PlayerInventory->ConsumeItem(Item, Quantity);
-
-		FActorSpawnParameters SpawnParameters;
-		SpawnParameters.Owner = this;
-		SpawnParameters.bNoFail = true;
-		SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-
-		FVector SpawnLocation = GetActorLocation();
-		SpawnLocation.Z -= GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
-
-		const FTransform SpawnTransform(GetActorRotation(), SpawnLocation);
-		ensure(PickupClass);
-
-		APickup* Pickup = GetWorld()->SpawnActor<APickup>(PickupClass, SpawnTransform, SpawnParameters);
-		Pickup->InitializePickup(Item->GetClass(), DroppedQuantity);
-	}
-}
-
-bool ACharacterBase::IsInteracting() const
-{
-	return GetWorldTimerManager().IsTimerActive(TimerHandle_Interact);
-}
-
-float ACharacterBase::GetRemainingInteractTime() const
-{
-	return GetWorldTimerManager().GetTimerRemaining(TimerHandle_Interact);
+	Inventory = CreateDefaultSubobject<UInventoryComponent>(TEXT("Inventory"));
 }
 
 float ACharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
@@ -129,11 +82,6 @@ void ACharacterBase::Tick(float DeltaTime)
 		{
 			CustomMovementComponent->ProModeStaminaUpdate(HealthComponent->GetCurrentHealth());
 		}
-
-	if (IsInteracting() || GetWorld()->TimeSince(InteractionData.LastInteractionCheckTime) > InteractionCheckFrequency)
-		{
-			PerformInteractionCheck();
-		}
 }
 
 // Called to bind functionality to input
@@ -159,9 +107,6 @@ void ACharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAction("Dodge", IE_Pressed, this, &ACharacterBase::INT_Dodge);
 	PlayerInputComponent->BindAction("Block", IE_Pressed, this, &ACharacterBase::INT_Block);
 	PlayerInputComponent->BindAction("Block", IE_Released, this, &ACharacterBase::INT_StopBlock);
-
-	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ACharacterBase::BeginInteract);
-	PlayerInputComponent->BindAction("Interact", IE_Released, this, &ACharacterBase::EndInteract);
 }
 
 void ACharacterBase::MoveForward(float Value)
@@ -435,139 +380,21 @@ void ACharacterBase::JumpAttackCheck()
 void ACharacterBase::INT_Death()
 {
 	HealthComponent->SetIsDead();
-	bCanDodge = false;
+	CustomMovementComponent->SetCanDodge(false);
 	bCanAttack = false;
 	bCanBlock = false;
+	GetCharacterMovement()->DisableMovement();
 	Death();
 }
 
 void ACharacterBase::INT_Dodge()
 {
-	if (bCanDodge && !bIsAttacking && !bIsDodging && !(GetCharacterMovement()->IsFalling()))
-	{
-		bIsDodging = true;
-		Dodge();
-	}
-}
-
-void ACharacterBase::PerformInteractionCheck()
-{
-	if (GetController() == nullptr) return;
-
-	InteractionData.LastInteractionCheckTime = GetWorld()->GetTimeSeconds();
-
-	FVector EyesLoc = GetCameraBoom()->GetComponentLocation();
-	FRotator EyesRot = GetCameraBoom()->GetComponentRotation();
-
-	const FVector TraceStart{ EyesLoc };
-	const FVector TraceEnd{ (EyesRot.Vector() * InteractionCheckDistance) + TraceStart };
-	FHitResult TraceHit;
-
-	FCollisionQueryParams QueryParams;
-	QueryParams.AddIgnoredActor(this);
-
-	if (GetWorld()->LineTraceSingleByChannel(TraceHit, TraceStart, TraceEnd, ECC_Visibility, QueryParams))
-	{
-		if (TraceHit.GetActor())
-		{
-			if (UInteractionComponent* InteractionComponent = Cast<UInteractionComponent>(TraceHit.GetActor()->GetComponentByClass(UInteractionComponent::StaticClass())))
-			{
-				float Distance = (TraceStart - TraceHit.ImpactPoint).Size();
-				if (InteractionComponent != GetInteractable() && Distance <= InteractionComponent->GetInteractionDistance())
-					FoundNewInteractable(InteractionComponent);
-				else if (Distance > InteractionComponent->GetInteractionDistance() && GetInteractable())
-					CouldntFindInteractable();
-
-				return;
-			}
-		}
-	}
-
-	CouldntFindInteractable();
-}
-
-void ACharacterBase::CouldntFindInteractable()
-{
-	if (GetWorldTimerManager().IsTimerActive(TimerHandle_Interact))
-	{
-		GetWorldTimerManager().ClearTimer(TimerHandle_Interact);
-	}
-
-	if (UInteractionComponent* Interactable = GetInteractable())
-	{
-		Interactable->EndFocus(this);
-
-		if (InteractionData.bInteractHeld)
-		{
-			EndInteract();
-		}
-	}
-
-	InteractionData.ViewedInteractionComponent = nullptr;
-}
-
-void ACharacterBase::FoundNewInteractable(UInteractionComponent* Interactable)
-{
-	if(!Interactable) return;
-	
-	EndInteract();
-
-	if(UInteractionComponent* OldInteractable = GetInteractable())
-	{
-		OldInteractable->EndFocus(this);
-	}
-
-	InteractionData.ViewedInteractionComponent = Interactable;
-	Interactable->BeginFocus(this);
-}
-
-void ACharacterBase::Interact()
-{
-	GetWorldTimerManager().ClearTimer(TimerHandle_Interact);
-
-	if (UInteractionComponent* Interactable = GetInteractable())
-	{
-		Interactable->Interact(this);
-	}
-}
-
-void ACharacterBase::BeginInteract()
-{
-	PerformInteractionCheck();
-	
-	InteractionData.bInteractHeld = true;
-
-	if (UInteractionComponent* Interactable = GetInteractable())
-	{
-		Interactable->BeginInteract(this);
-
-		if (FMath::IsNearlyZero(Interactable->GetInteractionTime()))
-			Interact();
-		else
-			GetWorldTimerManager().SetTimer(TimerHandle_Interact, this, &ACharacterBase::Interact, Interactable->GetInteractionTime(), false);
-	}
-}
-
-void ACharacterBase::EndInteract()
-{
-	InteractionData.bInteractHeld = false;
-
-	GetWorldTimerManager().ClearTimer(TimerHandle_Interact);
-
-	if (UInteractionComponent* Interactable = GetInteractable())
-	{
-		Interactable->EndInteract(this);
-	}
-}
-
-void ACharacterBase::InteractCheckOverlap(UInteractionComponent* Interactable)
-{
-	FoundNewInteractable(Interactable);
+	CustomMovementComponent->Dodge();
 }
 
 void ACharacterBase::INT_Block()
 {
-	if (bCanBlock && !bIsDodging && !(GetCharacterMovement()->IsFalling()))
+	if (bCanBlock && !CustomMovementComponent->GetIsDodging() && !(GetCharacterMovement()->IsFalling()))
 	{
 		bIsBlocking = true;
 		Block();

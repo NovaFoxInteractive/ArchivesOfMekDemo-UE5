@@ -9,6 +9,7 @@
 #include "Components/BoxComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SphereComponent.h"
+#include "Core/Components/HealthComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "Kismet/GameplayStatics.h"
@@ -18,7 +19,6 @@
 
 // Sets default values
 AEnemyBase::AEnemyBase():
-	Health(100.f), MaxHealth(100.f),
 	HealthBarDisplayTime(1.5f),
 	bInAttackRange(false),
 	BaseDamage(20.f),
@@ -29,7 +29,7 @@ AEnemyBase::AEnemyBase():
 	AttackL(TEXT("AttackL")), AttackR(TEXT("AttackR")),
 	LeftWeaponSocket(TEXT("FX_Trail_L_01")), RightWeaponSocket(TEXT("FX_Trail_R_01")),
 	bStunned(false), StunChance(0.5f),
-	bDying(false), DeathTime(4.f)
+	DeathTime(4.f)
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -40,6 +40,8 @@ AEnemyBase::AEnemyBase():
 	// Sets the Collision volume for telling the enemy to attack the player.
 	CombatRangeSphere = CreateDefaultSubobject<USphereComponent>(TEXT("CombatRange"));
 	CombatRangeSphere->SetupAttachment(GetRootComponent());
+	// Setup fot health component
+	HealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
 	// Sets the Collision volume for the enemy's weapons.
 	LeftWeaponCollision = CreateDefaultSubobject<UBoxComponent>(TEXT("LeftWeaponBox"));
 	LeftWeaponCollision->SetupAttachment(GetMesh(), FName("LeftWeaponBone"));
@@ -238,8 +240,8 @@ FName AEnemyBase::GetAttackSectionName() const
 
 void AEnemyBase::Die()
 {
-	if(bDying) return; // Only run through this function once.
-	bDying = true;
+	if(HealthComponent->GetIsDead()) return; // Only run through this function once.
+	HealthComponent->SetIsDead();
 	
 	HideHealthBar();
 
@@ -365,15 +367,11 @@ float AEnemyBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 	
 	if (EnemyController)
 		EnemyController->GetBlackboardComponent()->SetValueAsObject(FName("Target"), DamageCauser);
-	
-	
-	if (Health - DamageAmount <= 0.f)
-	{
-		Health = 0.f;
+
+	HealthComponent->UpdateHealth(DamageAmount);
+
+	if(HealthComponent->Died())
 		Die();
-	}
-	else
-		Health -= DamageAmount;
 
 	return DamageAmount;
 }
