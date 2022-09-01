@@ -2,6 +2,7 @@
 
 #include "Characters/Animations/AnimInstanceBase.h"
 #include "Characters/CharacterBase.h"
+#include "Core/Components/CombatComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
@@ -34,6 +35,6 @@ void UAnimInstanceBase::UpdateAnimationProperties(float DeltaTime)
 
 		bIsInAir = Pawn->GetMovementComponent()->IsFalling();
 		bIsCrouching = Pawn->GetMovementComponent()->IsCrouching();
-		bIsBlocking = Pawn->GetIsBlocking();
+		bIsBlocking = Pawn->GetCombatComponent()->GetIsBlocking();
 	}
 }

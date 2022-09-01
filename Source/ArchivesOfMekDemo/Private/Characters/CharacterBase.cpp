@@ -11,6 +11,7 @@
 #include "Kismet/GameplayStatics.h"
 
 #include "Core/ArchivesOfMekDemoGameModeBase.h"
+#include "Core/Components/CombatComponent.h"
 #include "Core/Components/CustomMovementComponent.h"
 #include "Core/Components/HealthComponent.h"
 #include "Core/Components/InventoryComponent.h"
@@ -41,15 +42,14 @@ ACharacterBase::ACharacterBase()
 	// Initialize Stat Components
 	HealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
 	CustomMovementComponent = CreateDefaultSubobject<UCustomMovementComponent>(TEXT("CustomMovementComponent"));
+	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent")); //
+	Inventory = CreateDefaultSubobject<UInventoryComponent>(TEXT("Inventory"));
 
+	CombatComponent->Initialize(this);
+	
 	// Initialize Variables
 	BaseTurnRate = 65.f;
 	BaseLookUpRate = 65.f;
-	
-	bCanAttack = true;
-	bCanBlock = true;
-
-	Inventory = CreateDefaultSubobject<UInventoryComponent>(TEXT("Inventory"));
 }
 
 float ACharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
@@ -104,9 +104,9 @@ void ACharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &ACharacterBase::StopSprint);
 	PlayerInputComponent->BindAction("LightAttack", IE_Pressed, this, &ACharacterBase::INT_LightAttack);
 	PlayerInputComponent->BindAction("HeavyAttack", IE_Pressed, this, &ACharacterBase::INT_HeavyAttack);
-	PlayerInputComponent->BindAction("Dodge", IE_Pressed, this, &ACharacterBase::INT_Dodge);
-	PlayerInputComponent->BindAction("Block", IE_Pressed, this, &ACharacterBase::INT_Block);
-	PlayerInputComponent->BindAction("Block", IE_Released, this, &ACharacterBase::INT_StopBlock);
+	PlayerInputComponent->BindAction("Dodge", IE_Pressed, this, &ACharacterBase::Dodge);
+	PlayerInputComponent->BindAction("Block", IE_Pressed, this, &ACharacterBase::Block);
+	PlayerInputComponent->BindAction("Block", IE_Released, this, &ACharacterBase::StopBlock);
 }
 
 void ACharacterBase::MoveForward(float Value)
@@ -155,254 +155,52 @@ void ACharacterBase::LookUpAtRate(float Rate)
 
 void ACharacterBase::INT_LightAttack()
 {
-	if (!bCanAttack || bAnimLoaded) return; // Check if Can Attack
+	if (CombatComponent->GetCanAttack()) return; // Check if Can Attack
 
-	if (bIsBlocking)
-	{
-		PreviousAttack = EAttackType::EAT_None;
-		AttackCount = 0;
-	}
+	CombatComponent->ResetAttack();
 
-	bIsAttacking = true;
+	CombatComponent->SetIsAttacking();
 
 	if (GetCharacterMovement()->IsFalling())
-	{
-		CurrentAttackType = EAttackType::EAT_LightJumpAttack;
-	}
+		CombatComponent->Attack(EAttackType::EAT_LightJumpAttack);
 	else
-	{
-		CurrentAttackType = EAttackType::EAT_LightAttack;
-	}
-
-	INT_ComboLogic();
-
-	if (!bAnimPlaying) // Check if in the middle of an attack
-		Attack();
-	else
-		bAnimLoaded = true;
+		CombatComponent->Attack(EAttackType::EAT_LightAttack);
 }
 
 void ACharacterBase::INT_HeavyAttack()
 {
-	if (!bCanAttack || bAnimLoaded) return; // Check if Can Attack
+	if (CombatComponent->GetCanAttack()) return; // Check if Can Attack
 
-	if (bIsBlocking)
-	{
-		PreviousAttack = EAttackType::EAT_None;
-		AttackCount = 0;
-	}
-
-	bIsAttacking = true;
+	CombatComponent->ResetAttack();
+	
+	CombatComponent->SetIsAttacking();
 
 	if (GetCharacterMovement()->IsFalling())
-	{
-		CurrentAttackType = EAttackType::EAT_HeavyJumpAttack;
-	}
+		CombatComponent->Attack(EAttackType::EAT_HeavyJumpAttack);
 	else
-	{
-		CurrentAttackType = EAttackType::EAT_HeavyAttack;
-	}
-
-	INT_ComboLogic();
-
-	if (!bAnimPlaying) // Check if in the middle of an attack
-		Attack();
-	else
-		bAnimLoaded = true;
-}
-
-void ACharacterBase::INT_ComboLogic()
-{
-	switch (PreviousAttack)
-	{
-	default:
-		switch (CurrentAttackType)
-		{
-		case EAttackType::EAT_LightAttack:
-			AnimNum = EAttackAnim::EAA_L; // Light
-			PreviousAttack = CurrentAttackType;
-			AttackCount++;
-			break;
-
-		case EAttackType::EAT_HeavyAttack:
-			AnimNum = EAttackAnim::EAA_H; // Heavy
-			PreviousAttack = CurrentAttackType;
-			AttackCount++;
-			break;
-
-		case EAttackType::EAT_LightJumpAttack:
-			AnimNum = EAttackAnim::EAA_LJump; // Light Jump
-			PreviousAttack = CurrentAttackType;
-			AttackCount = 0;
-			break;
-
-		case EAttackType::EAT_HeavyJumpAttack:
-			AnimNum = EAttackAnim::EAA_HJump; // Heavy Jump
-			PreviousAttack = CurrentAttackType;
-			AttackCount = 0;
-			break;
-		default:
-			break;
-		}
-		break;
-
-	case EAttackType::EAT_LightAttack:
-		switch (CurrentAttackType)
-		{
-		case EAttackType::EAT_LightAttack:
-			if (INT_ComboNumCheck())
-			{
-				AnimNum = EAttackAnim::EAA_LLL; // Light Light Light
-				PreviousAttack = EAttackType::EAT_None;
-				AttackCount = 0;
-			}
-			else
-			{
-				AnimNum = EAttackAnim::EAA_LL; // Light Light
-				PreviousAttack = CurrentAttackType;
-				AttackCount++;
-			}
-			break;
-
-		case EAttackType::EAT_HeavyAttack:
-			if (INT_ComboNumCheck())
-			{
-				AnimNum = EAttackAnim::EAA_LLH; // Light Light Heavy
-				PreviousAttack = EAttackType::EAT_None;
-				AttackCount = 0;
-			}
-			else
-			{
-				AnimNum = EAttackAnim::EAA_H; // Heavy
-				PreviousAttack = CurrentAttackType;
-				AttackCount = 0;
-				AttackCount++;
-			}
-			break;
-
-		case EAttackType::EAT_LightJumpAttack:
-			AnimNum = EAttackAnim::EAA_LJump; // Light Jump
-			PreviousAttack = CurrentAttackType;
-			AttackCount = 0;
-			break;
-
-		case EAttackType::EAT_HeavyJumpAttack:
-			AnimNum = EAttackAnim::EAA_HJump; // Heavy Jump
-			PreviousAttack = CurrentAttackType;
-			AttackCount = 0;
-			break;
-		default:
-			break;
-		}
-		break;
-
-	case EAttackType::EAT_HeavyAttack:
-		switch (CurrentAttackType)
-		{
-		case EAttackType::EAT_LightAttack:
-			if (INT_ComboNumCheck())
-			{
-				AnimNum = EAttackAnim::EAA_HHL; // Heavy Heavy Light
-				PreviousAttack = EAttackType::EAT_None;
-				AttackCount = 0;
-			}
-			else
-			{
-				AnimNum = EAttackAnim::EAA_L; // Light
-				PreviousAttack = CurrentAttackType;
-				AttackCount = 0;
-				AttackCount++;
-			}
-			break;
-
-		case EAttackType::EAT_HeavyAttack:
-			if (INT_ComboNumCheck())
-			{
-				AnimNum = EAttackAnim::EAA_HHH; // Heavy Heavy Heavy
-				PreviousAttack = EAttackType::EAT_None;
-				AttackCount = 0;
-			}
-			else
-			{
-				AnimNum = EAttackAnim::EAA_HH; // Heavy Heavy
-				PreviousAttack = CurrentAttackType;
-				AttackCount++;
-			}
-			break;
-
-		case EAttackType::EAT_LightJumpAttack:
-			AnimNum = EAttackAnim::EAA_LJump; // Light Jump
-			PreviousAttack = CurrentAttackType;
-			AttackCount = 0;
-			break;
-
-		case EAttackType::EAT_HeavyJumpAttack:
-			AnimNum = EAttackAnim::EAA_HJump; // Heavy Jump
-			PreviousAttack = CurrentAttackType;
-			AttackCount = 0;
-			break;
-		default:
-			break;
-		}
-		break;
-	}
-}
-
-bool ACharacterBase::INT_ComboNumCheck() const
-{
-	if (AttackCount > 1)
-		return true;
-
-	return false;
-}
-
-void ACharacterBase::JumpAttackCheck()
-{
-	if (bAnimLoaded)
-	{
-		if (AnimNum == EAttackAnim::EAA_LJump || AnimNum == EAttackAnim::EAA_HJump)
-		{
-			if (!(GetCharacterMovement()->IsFalling()))
-			{
-				if (AnimNum == EAttackAnim::EAA_LJump)
-				{
-					AnimNum = EAttackAnim::EAA_L;
-				}
-				else
-				{
-					AnimNum = EAttackAnim::EAA_H;
-				}
-			}
-		}
-	}
+		CombatComponent->Attack(EAttackType::EAT_HeavyAttack);
 }
 
 void ACharacterBase::INT_Death()
 {
 	HealthComponent->SetIsDead();
 	CustomMovementComponent->SetCanDodge(false);
-	bCanAttack = false;
-	bCanBlock = false;
+	CombatComponent->SetValuesFalse();
 	GetCharacterMovement()->DisableMovement();
 	Death();
 }
 
-void ACharacterBase::INT_Dodge()
+void ACharacterBase::Dodge()
 {
 	CustomMovementComponent->Dodge();
 }
 
-void ACharacterBase::INT_Block()
+void ACharacterBase::Block()
 {
-	if (bCanBlock && !CustomMovementComponent->GetIsDodging() && !(GetCharacterMovement()->IsFalling()))
-	{
-		bIsBlocking = true;
-		Block();
-	}
+	CombatComponent->Block();
 }
 
-void ACharacterBase::INT_StopBlock()
+void ACharacterBase::StopBlock()
 {
-	bIsBlocking = false;
-	StopBlock();
+	CombatComponent->StopBlock();
 }

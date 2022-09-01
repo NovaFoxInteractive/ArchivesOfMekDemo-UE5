@@ -28,6 +28,9 @@ class ARCHIVESOFMEKDEMO_API ACharacterBase : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attributes|Health", meta = (AllowPrivateAccess = "true"))
 	class UCustomMovementComponent* CustomMovementComponent;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	class UCombatComponent* CombatComponent;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"))
 	class USphereComponent* PickupTraceCollision;
 
@@ -43,34 +46,6 @@ class ARCHIVESOFMEKDEMO_API ACharacterBase : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	float BaseLookUpRate;
 	
-	// Combat
-	UPROPERTY(BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	bool bIsAttacking;
-	UPROPERTY(BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	bool bCanAttack;
-	
-	// / Combat Block System
-	UPROPERTY(BlueprintReadWrite, Category = "Combat|Blocking", meta = (AllowPrivateAccess = "true"))
-	bool bIsBlocking;
-	UPROPERTY(BlueprintReadOnly, Category = "Combat|Blocking", meta = (AllowPrivateAccess = "true"))
-	bool bCanBlock;
-
-	// / Combo System
-	UPROPERTY(BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	int AttackCount = 0;
-	UPROPERTY(BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	EAttackType PreviousAttack = EAttackType::EAT_None;
-	UPROPERTY(BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	EAttackType CurrentAttackType = EAttackType::EAT_None;
-
-	// / Animations
-	UPROPERTY(BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	bool bAnimPlaying = false;
-	UPROPERTY(BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	bool bAnimLoaded = false;
-	UPROPERTY(BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	EAttackAnim AnimNum;
-
 	// Damage Aesthetics
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat|Damage|Aesthetics", meta = (AllowPrivateAccess = "true"))
 	class USoundCue* MeleeImpactSound;
@@ -80,9 +55,6 @@ class ARCHIVESOFMEKDEMO_API ACharacterBase : public ACharacter
 public:
 	// Sets default values for this character's properties
 	ACharacterBase();
-
-	bool IsInteracting() const;
-	float GetRemainingInteractTime() const;
 
 	// Take Combat Damage
 	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
@@ -104,19 +76,15 @@ protected:
 	void INT_LightAttack();
 	void INT_HeavyAttack();
 
-	// / Combo System
-	void INT_ComboLogic();
-	bool INT_ComboNumCheck() const;
-
 	// / Combat Blocking System
-	void INT_Block();
-	void INT_StopBlock();
+	void Block();
+	void StopBlock();
 
 	// Health
 	void INT_Death();
 
 	// Advanced Movement
-	void INT_Dodge();
+	void Dodge();
 
 public:
 	
@@ -126,29 +94,15 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	// Getter Functions
-	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
-	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
-	FORCEINLINE class UCustomMovementComponent* GetCustomMovement() const { return CustomMovementComponent; }
+	FORCEINLINE USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
+	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+	FORCEINLINE UCustomMovementComponent* GetCustomMovement() const { return CustomMovementComponent; }
+	FORCEINLINE UCombatComponent* GetCombatComponent() const { return CombatComponent; }
 	FORCEINLINE UInventoryComponent* GetInventoryComponent() const { return Inventory; }
 	FORCEINLINE USphereComponent* GetPickupTraceCollision() const { return PickupTraceCollision; }
-	
-	FORCEINLINE bool GetIsAttacking() const { return bIsAttacking; }
-	FORCEINLINE bool GetIsBlocking() const { return bIsBlocking; }
 
 	FORCEINLINE USoundCue* GetMeleeImpactSound() const { return MeleeImpactSound; }
 	FORCEINLINE UParticleSystem* GetBloodParticles() const { return BloodParticles; }
-
-	// Combat
-	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = Combat)
-	void Attack();
-	// / Combo System
-	UFUNCTION(BlueprintCallable, Category = "Combat|Blocking")
-	void JumpAttackCheck();
-	// / Combat Blocking System
-	UFUNCTION(BlueprintImplementableEvent, Category = "Combat|Blocking")
-	void Block();
-	UFUNCTION(BlueprintImplementableEvent, Category = "Combat|Blocking")
-	void StopBlock();
 	
 	// Health
 	UFUNCTION(BlueprintImplementableEvent, Category = Health)

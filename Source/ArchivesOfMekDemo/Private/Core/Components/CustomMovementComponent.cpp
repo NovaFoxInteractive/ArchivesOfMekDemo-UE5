@@ -4,6 +4,7 @@
 #include "Core/Components/CustomMovementComponent.h"
 
 #include "Characters/CharacterBase.h"
+#include "Core/Components/CombatComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 // Sets default values for this component's properties
@@ -55,7 +56,7 @@ void UCustomMovementComponent::ProModeStaminaUpdate(const float CurrentHealth)
 
 bool UCustomMovementComponent::Dodge()
 {
-	if (bCanDodge && !PlayerRef->GetIsAttacking() && !bIsDodging && !(PlayerRef->GetCharacterMovement()->IsFalling()))
+	if (bCanDodge && !PlayerRef->GetCombatComponent()->GetIsAttacking() && !bIsDodging && !(PlayerRef->GetCharacterMovement()->IsFalling()))
 	{
 		bIsDodging = true;
 		OnDodge.Broadcast();
