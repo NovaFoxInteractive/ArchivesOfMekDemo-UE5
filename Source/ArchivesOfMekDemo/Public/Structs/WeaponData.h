@@ -1,7 +1,6 @@
 // Copyright NovaFox Interactive L.L.C 2021
 #pragma once
 
-#include "Structs/ItemData.h"
 #include "WeaponData.generated.h"
 
 UENUM(BlueprintType)
